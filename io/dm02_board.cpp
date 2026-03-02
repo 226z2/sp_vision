@@ -59,10 +59,6 @@ Mode Dm02Board::to_mode(GimbalMode mode)
       return Mode::idle;
     case GimbalMode::AUTO_AIM:
       return Mode::auto_aim;
-    case GimbalMode::SMALL_BUFF:
-      return Mode::small_buff;
-    case GimbalMode::BIG_BUFF:
-      return Mode::big_buff;
     default:
       return Mode::auto_aim;
   }

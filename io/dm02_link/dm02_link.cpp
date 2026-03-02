@@ -36,8 +36,6 @@ inline GimbalMode parse_mode(const std::string & s)
 {
   if (s == "IDLE" || s == "idle") return GimbalMode::IDLE;
   if (s == "AUTO_AIM" || s == "auto_aim") return GimbalMode::AUTO_AIM;
-  if (s == "SMALL_BUFF" || s == "small_buff") return GimbalMode::SMALL_BUFF;
-  if (s == "BIG_BUFF" || s == "big_buff") return GimbalMode::BIG_BUFF;
   return GimbalMode::AUTO_AIM;
 }
 
@@ -297,10 +295,6 @@ std::string Dm02Link::str(GimbalMode mode) const
       return "IDLE";
     case GimbalMode::AUTO_AIM:
       return "AUTO_AIM";
-    case GimbalMode::SMALL_BUFF:
-      return "SMALL_BUFF";
-    case GimbalMode::BIG_BUFF:
-      return "BIG_BUFF";
     default:
       return "INVALID";
   }

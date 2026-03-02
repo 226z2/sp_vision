@@ -35,7 +35,6 @@ set(SP_THIRD_PARTY_TARGETS
 add_subdirectory(tools)
 add_subdirectory(io)
 add_subdirectory(tasks/auto_aim)
-add_subdirectory(tasks/auto_buff)
 add_subdirectory(tasks/omniperception)
 
 ####################src###################
@@ -44,19 +43,15 @@ add_executable(mt_standard src/mt_standard.cpp)
 add_executable(standard_mpc src/standard_mpc.cpp)
 add_executable(auto_aim_debug_mpc src/auto_aim_debug_mpc.cpp)
 add_executable(mt_auto_aim_debug src/mt_auto_aim_debug.cpp)
-add_executable(auto_buff_debug src/auto_buff_debug.cpp)
-add_executable(auto_buff_debug_mpc src/auto_buff_debug_mpc.cpp)
 add_executable(uav src/uav.cpp)
 add_executable(uav_debug src/uav_debug.cpp)
 
-target_link_libraries(standard PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim auto_buff tools io)
-target_link_libraries(mt_standard PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim auto_buff tools io)
-target_link_libraries(standard_mpc PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim auto_buff tools io)
-target_link_libraries(auto_aim_debug_mpc PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim auto_buff tools io)
-target_link_libraries(mt_auto_aim_debug PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim auto_buff tools io)
-target_link_libraries(auto_buff_debug PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_buff tools io ${CERES_LIBRARIES})
-target_link_libraries(auto_buff_debug_mpc PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_buff tools io ${CERES_LIBRARIES})
-target_link_libraries(uav PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim auto_buff tools io)
+target_link_libraries(standard PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
+target_link_libraries(mt_standard PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
+target_link_libraries(standard_mpc PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
+target_link_libraries(auto_aim_debug_mpc PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
+target_link_libraries(mt_auto_aim_debug PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
+target_link_libraries(uav PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
 target_link_libraries(uav_debug PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
 
 ##################calibration################
@@ -74,7 +69,6 @@ target_link_libraries(split_video PRIVATE ${OpenCV_LIBS} fmt::fmt tools)
 
 ##################tests##################
 add_executable(auto_aim_test tests/auto_aim_test.cpp)
-add_executable(auto_buff_test tests/auto_buff_test.cpp)
 add_executable(camera_detect_test tests/camera_detect_test.cpp)
 add_executable(camera_test tests/camera_test.cpp)
 add_executable(camera_thread_test tests/camera_thread_test.cpp)
@@ -91,7 +85,6 @@ add_executable(minimum_vision_system tests/minimum_vision_system.cpp)
 add_executable(communication_demo tests/communication_demo.cpp)
 
 target_link_libraries(auto_aim_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim Holon::communication::drivers Threads::Threads)
-target_link_libraries(auto_buff_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_buff tools io)
 target_link_libraries(camera_detect_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools auto_aim io)
 target_link_libraries(camera_test PRIVATE ${OpenCV_LIBS} fmt::fmt tools io)
 target_link_libraries(camera_thread_test PRIVATE ${OpenCV_LIBS} fmt::fmt auto_aim tools io)
@@ -145,7 +138,7 @@ else()
 endif()
 
 # 统一为所有核心库添加三方依赖（确保包含路径可见）
-foreach(lib_target tools io auto_aim auto_buff omniperception)
+foreach(lib_target tools io auto_aim omniperception)
     if(TARGET ${lib_target})
         target_link_libraries(${lib_target} PUBLIC ${SP_THIRD_PARTY_TARGETS})
     endif()
@@ -157,8 +150,6 @@ set(SP_EXECUTABLE_TARGETS
     standard_mpc
     auto_aim_debug_mpc
     mt_auto_aim_debug
-    auto_buff_debug
-    auto_buff_debug_mpc
     uav
     uav_debug
     capture
@@ -167,7 +158,6 @@ set(SP_EXECUTABLE_TARGETS
     calibrate_robotworld_handeye
     split_video
     auto_aim_test
-    auto_buff_test
     camera_detect_test
     camera_test
     camera_thread_test

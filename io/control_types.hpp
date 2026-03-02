@@ -10,13 +10,11 @@ enum Mode
 {
   idle,
   auto_aim,
-  small_buff,
-  big_buff,
   outpost
 };
 
-inline constexpr std::array<std::string_view, 5> MODES = {
-  "idle", "auto_aim", "small_buff", "big_buff", "outpost"};
+inline constexpr std::array<std::string_view, 3> MODES = {
+  "idle", "auto_aim", "outpost"};
 
 // 哨兵专有
 enum ShootMode
