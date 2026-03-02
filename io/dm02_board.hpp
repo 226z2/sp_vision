@@ -6,7 +6,6 @@
 #include <chrono>
 #include <string>
 
-#include "io/command_sender.hpp"
 #include "io/command.hpp"
 #include "io/control_types.hpp"
 #include "io/dm02_link/dm02_link.hpp"
@@ -20,7 +19,6 @@ namespace io
  * - 底层使用 io::Dm02Link（串口 + uproto/MUX + timesync）
  */
 class Dm02Board
-  : public CommandSender
 {
 public:
   double bullet_speed{0.0};
@@ -32,7 +30,7 @@ public:
 
   Eigen::Quaterniond imu_at(std::chrono::steady_clock::time_point timestamp);
 
-  void send(Command command) override;
+  void send(Command command);
 
   // 需要用到 Dm02Link 额外能力时可直接访问
   Dm02Link & link() { return link_; }
