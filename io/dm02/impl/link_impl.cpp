@@ -1,20 +1,20 @@
-#include "dm02_link.hpp"
+#include "io/dm02/impl/link_impl.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <thread>
 #include <utility>
 
-#include <cstdint>
-#include <optional>
+#include "serial/serial.h"
+
+#include "modules/communication/drivers/dm_02/dm_02.hpp"
 #include "tools/logger.hpp"
 #include "tools/math_tools.hpp"
 #include "tools/yaml.hpp"
 
-#include "modules/communication/drivers/dm_02/dm_02.hpp"
-#include "modules/communication/drivers/dm_02/serial_transport_posix.hpp"
-
-namespace io
+namespace io::dm02::impl
 {
-
 namespace
 {
 constexpr double kDeg2Rad = M_PI / 180.0;
@@ -39,27 +39,134 @@ inline GimbalMode parse_mode(const std::string & s)
   return GimbalMode::AUTO_AIM;
 }
 
+class IoSerialTransport final : public communication::dm_02::Transport
+{
+public:
+  IoSerialTransport() = default;
+  ~IoSerialTransport() override { close(); }
+
+  bool open(const std::string & endpoint) override
+  {
+    close();
+
+    std::string port;
+    int baud = 115200;
+    if (!parse_endpoint(endpoint, port, baud)) return false;
+
+    try {
+      auto timeout = serial::Timeout::simpleTimeout(5);
+      serial_ = std::make_unique<serial::Serial>(
+        port, static_cast<uint32_t>(baud), timeout, serial::eightbits, serial::parity_none,
+        serial::stopbits_one, serial::flowcontrol_none);
+      if (!serial_->isOpen()) serial_->open();
+      return serial_->isOpen();
+    } catch (...) {
+      serial_.reset();
+      return false;
+    }
+  }
+
+  void close() override
+  {
+    if (!serial_) return;
+    try {
+      if (serial_->isOpen()) serial_->close();
+    } catch (...) {
+    }
+    serial_.reset();
+  }
+
+  bool write_all(const std::uint8_t * data, std::size_t len) override
+  {
+    if (!serial_ || !serial_->isOpen()) return false;
+    if (!data && len > 0) return false;
+    try {
+      const auto n = serial_->write(data, len);
+      return n == len;
+    } catch (...) {
+      return false;
+    }
+  }
+
+  long read_some(std::uint8_t * data, std::size_t cap) override
+  {
+    if (!serial_ || !serial_->isOpen()) return -1;
+    if (!data || cap == 0) return 0;
+    try {
+      const auto avail = serial_->available();
+      if (avail == 0) return 0;
+      const auto n = serial_->read(data, std::min(cap, avail));
+      return static_cast<long>(n);
+    } catch (...) {
+      return -1;
+    }
+  }
+
+  int wait_readable(int timeout_ms) override
+  {
+    if (!serial_ || !serial_->isOpen()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(std::max(timeout_ms, 0)));
+      return 0;
+    }
+
+    if (timeout_ms <= 0) {
+      return serial_->available() > 0 ? 1 : 0;
+    }
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
+    while (std::chrono::steady_clock::now() < deadline) {
+      if (serial_->available() > 0) return 1;
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return serial_->available() > 0 ? 1 : 0;
+  }
+
+  int fd() const override { return -1; }
+
+  std::uint16_t mtu() const override { return 1024; }
+
+private:
+  static bool parse_endpoint(const std::string & endpoint, std::string & port, int & baud)
+  {
+    std::string target = endpoint;
+    if (endpoint.rfind("serial:", 0) == 0) {
+      const auto query_pos = endpoint.find('?');
+      target = endpoint.substr(7, query_pos == std::string::npos ? std::string::npos : query_pos - 7);
+    }
+
+    if (target.empty()) return false;
+    port = target;
+
+    const auto baud_pos = endpoint.find("baud=");
+    if (baud_pos != std::string::npos) {
+      const auto * ptr = endpoint.c_str() + baud_pos + 5;
+      const long parsed = std::strtol(ptr, nullptr, 10);
+      if (parsed > 0) baud = static_cast<int>(parsed);
+    }
+    return true;
+  }
+
+  std::unique_ptr<serial::Serial> serial_;
+};
+
 }  // namespace
 
-struct Dm02Link::Impl
+struct LinkImpl::DriverImpl
 {
   communication::dm_02::Driver driver;
   std::string endpoint;
 
-  explicit Impl(std::string ep)
-  : driver(
-      std::make_unique<communication::dm_02::SerialTransportPosix>(),
-      communication::dm_02::Config{})
+  explicit DriverImpl(std::string ep)
+  : driver(std::make_unique<IoSerialTransport>(), communication::dm_02::Config{})
   , endpoint(std::move(ep))
   {
   }
 };
 
-Dm02Link::Dm02Link(const std::string & config_path)
+LinkImpl::LinkImpl(const std::string & config_path)
 {
   auto yaml = tools::load(config_path);
 
-  // endpoint 优先级：dm02_endpoint > (com_port + dm02_baud)
   std::string endpoint;
   try {
     endpoint = tools::read<std::string>(yaml, "dm02_endpoint");
@@ -85,7 +192,7 @@ Dm02Link::Dm02Link(const std::string & config_path)
     mode_ = GimbalMode::AUTO_AIM;
   }
 
-  impl_ = std::make_unique<Impl>(endpoint);
+  impl_ = std::make_unique<DriverImpl>(endpoint);
 
   communication::dm_02::Callbacks cb;
   cb.on_gimbal_state = [this](const communication::dm_02::GimbalState & s) {
@@ -99,7 +206,7 @@ Dm02Link::Dm02Link(const std::string & config_path)
       Eigen::AngleAxisd(roll_rad, Eigen::Vector3d::UnitX());
     q.normalize();
 
-    auto t = steady_from_ns(s.host_ts_ns);
+    const auto t = steady_from_ns(s.host_ts_ns);
     queue_.push({q, t});
 
     std::lock_guard<std::mutex> lock(mutex_);
@@ -108,16 +215,16 @@ Dm02Link::Dm02Link(const std::string & config_path)
     state_.yaw_vel = static_cast<float>(static_cast<double>(s.gyro_yaw_udeps) * 1e-6 * kDeg2Rad);
     state_.pitch_vel =
       static_cast<float>(static_cast<double>(s.gyro_pitch_udeps) * 1e-6 * kDeg2Rad);
-    // 设置子弹速度：如果设备报告的速度有效，则使用；否则使用默认值
+
     if (s.bullet_speed_x100 > 0) {
       state_.bullet_speed = static_cast<float>(static_cast<double>(s.bullet_speed_x100) / 100.0);
     } else {
       state_.bullet_speed = bullet_speed_default_;
     }
-    
-    // 设置子弹计数：如果设备报告的计数有效，则使用；否则使用原子变量中缓存的值
+
     if (s.bullet_count >= 0) {
       state_.bullet_count = static_cast<std::uint16_t>(static_cast<std::uint32_t>(s.bullet_count));
+      bullet_count_.store(state_.bullet_count);
     } else {
       state_.bullet_count = bullet_count_.load();
     }
@@ -125,16 +232,16 @@ Dm02Link::Dm02Link(const std::string & config_path)
     encoders_.yaw = s.enc_yaw;
     encoders_.pitch = s.enc_pitch;
 
-    // 设置设备状态：射击状态、热量、热量限制、弹药数量等
     device_status_.shoot_state = s.shoot_state;
     device_status_.shooter_heat = s.shooter_heat;
     device_status_.shooter_heat_limit = s.shooter_heat_limit;
     device_status_.projectile_allowance_17mm = s.projectile_allowance_17mm;
     device_status_.projectile_allowance_42mm = s.projectile_allowance_42mm;
 
-    // 可选的云台模式反馈 (0=IDLE, 1=AUTO_AIM, 2=SMALL_BUFF, 3=BIG_BUFF)
-    if (s.gimbal_mode >= 0 && s.gimbal_mode <= 3) {
-      mode_ = static_cast<GimbalMode>(s.gimbal_mode);
+    if (s.gimbal_mode == 0) {
+      mode_ = GimbalMode::IDLE;
+    } else if (s.gimbal_mode >= 1 && s.gimbal_mode <= 3) {
+      mode_ = GimbalMode::AUTO_AIM;
     }
   };
 
@@ -159,44 +266,41 @@ Dm02Link::Dm02Link(const std::string & config_path)
   impl_->driver.set_callbacks(std::move(cb));
 
   if (!open()) {
-    tools::logger()->error("[Dm02Link] Failed to open endpoint: {}", impl_->endpoint);
-    exit(1);
+    tools::logger()->error("[Dm02] Failed to open endpoint: {}", impl_->endpoint);
+    std::exit(1);
   }
 
-  thread_ = std::thread(&Dm02Link::io_thread, this);
-
+  thread_ = std::thread(&LinkImpl::io_thread, this);
   queue_.pop();
-  tools::logger()->info("[Dm02Link] First state received.");
+  tools::logger()->info("[Dm02] First state received.");
 }
 
-Dm02Link::~Dm02Link()
+LinkImpl::~LinkImpl()
 {
   quit_ = true;
   if (thread_.joinable()) thread_.join();
   close();
 }
 
-bool Dm02Link::open()
+bool LinkImpl::open()
 {
   if (!impl_) return false;
   const bool ok = impl_->driver.open(impl_->endpoint);
-  if (ok) {
-    tools::logger()->info("[Dm02Link] Opened {}", impl_->endpoint);
-  }
+  if (ok) tools::logger()->info("[Dm02] Opened {}", impl_->endpoint);
   return ok;
 }
 
-void Dm02Link::close()
+void LinkImpl::close()
 {
   if (!impl_) return;
   impl_->driver.close();
 }
 
-void Dm02Link::reconnect()
+void LinkImpl::reconnect()
 {
-  int max_retry = 10;
-  for (int i = 0; i < max_retry && !quit_; ++i) {
-    tools::logger()->warn("[Dm02Link] Reconnecting, attempt {}/{}...", i + 1, max_retry);
+  constexpr int kMaxRetry = 10;
+  for (int i = 0; i < kMaxRetry && !quit_; ++i) {
+    tools::logger()->warn("[Dm02] Reconnecting, attempt {}/{}...", i + 1, kMaxRetry);
     try {
       close();
     } catch (...) {
@@ -204,16 +308,16 @@ void Dm02Link::reconnect()
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     if (open()) {
       queue_.clear();
-      tools::logger()->info("[Dm02Link] Reconnected.");
+      tools::logger()->info("[Dm02] Reconnected.");
       return;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
 }
 
-void Dm02Link::io_thread()
+void LinkImpl::io_thread()
 {
-  tools::logger()->info("[Dm02Link] io_thread started.");
+  tools::logger()->info("[Dm02] io_thread started.");
   int error_count = 0;
 
   while (!quit_) {
@@ -226,7 +330,7 @@ void Dm02Link::io_thread()
       impl_->driver.step(5);
       error_count = 0;
     } catch (...) {
-      error_count++;
+      ++error_count;
       if (error_count > 2000) {
         error_count = 0;
         reconnect();
@@ -234,61 +338,53 @@ void Dm02Link::io_thread()
     }
   }
 
-  tools::logger()->info("[Dm02Link] io_thread stopped.");
+  tools::logger()->info("[Dm02] io_thread stopped.");
 }
 
-GimbalMode Dm02Link::mode() const
+GimbalMode LinkImpl::mode() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return mode_;
 }
 
-GimbalState Dm02Link::state() const
+GimbalState LinkImpl::state() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return state_;
 }
 
-GimbalEncoders Dm02Link::encoders() const
+GimbalEncoders LinkImpl::encoders() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return encoders_;
 }
 
-/**
- * @brief 获取设备状态
- * @details 线程安全地获取当前DM02链路设备的状态。使用互斥锁保护对共享状态变量的访问。
- * @return DeviceStatus 设备的当前状态
- * @note 此函数是常量成员函数，不会修改对象的状态。
- * @thread_safe 此函数是线程安全的，使用互斥锁同步访问。
- */
-DeviceStatus Dm02Link::device_status() const
+DeviceStatus LinkImpl::device_status() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return device_status_;
 }
 
-ToFStatus Dm02Link::tof() const
+ToFStatus LinkImpl::tof() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return tof_;
 }
 
-TimeSyncStatus Dm02Link::timesync() const
+TimeSyncStatus LinkImpl::timesync() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return timesync_;
 }
 
-std::optional<std::uint64_t> Dm02Link::device_us_to_host_us(std::uint64_t device_ts_us) const
+std::optional<std::uint64_t> LinkImpl::device_us_to_host_us(std::uint64_t device_ts_us) const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   if (!timesync_.valid) return std::nullopt;
-  // 约定：offset_us = host_us - device_us
   return static_cast<std::uint64_t>(static_cast<std::int64_t>(device_ts_us) + timesync_.offset_us);
 }
 
-std::string Dm02Link::str(GimbalMode mode) const
+std::string LinkImpl::str(GimbalMode mode) const
 {
   switch (mode) {
     case GimbalMode::IDLE:
@@ -300,47 +396,22 @@ std::string Dm02Link::str(GimbalMode mode) const
   }
 }
 
-Eigen::Quaterniond Dm02Link::q(std::chrono::steady_clock::time_point t)
+Eigen::Quaterniond LinkImpl::q(std::chrono::steady_clock::time_point t)
 {
   while (true) {
     auto [q_a, t_a] = queue_.pop();
     auto [q_b, t_b] = queue_.front();
-    auto t_ab = tools::delta_time(t_a, t_b);
-    auto t_ac = tools::delta_time(t_a, t);
-    auto k = t_ac / t_ab;
-    Eigen::Quaterniond q_c = q_a.slerp(k, q_b).normalized();
+    const auto t_ab = tools::delta_time(t_a, t_b);
+    const auto t_ac = tools::delta_time(t_a, t);
+    const auto k = t_ac / t_ab;
+    const auto q_c = q_a.slerp(k, q_b).normalized();
     if (t < t_a) return q_c;
     if (!(t_a < t && t <= t_b)) continue;
-
     return q_c;
   }
 }
 
-/**
- * @brief 发送云台增量控制命令到DM02设备
- * 
- * 该函数计算当前云台位置与目标位置之间的增量，并将其打包成
- * GimbalDelta命令发送给DM02设备驱动。支持偏航和俯仰两个轴的控制。
- * 
- * @param control 是否启用控制，为true时计算增量，为false时增量为0
- * @param target_valid 目标是否有效标志位，将设置到命令状态字的bit0
- * @param yaw 目标偏航角，单位为弧度
- * @param yaw_vel 偏航角速度（未使用）
- * @param yaw_acc 偏航角加速度（未使用）
- * @param pitch 目标俯仰角，单位为弧度
- * @param pitch_vel 俯仰角速度（未使用）
- * @param pitch_acc 俯仰角加速度（未使用）
- * 
- * @note 
- * - 如果驱动未初始化或设备未打开，函数直接返回
- * - 增量计算公式：增量角度 = 目标角度 - 当前角度
- * - 最终发送的增量单位为微度（udeg，1e-6度）
- * - 使用mutex保护对当前云台状态的访问
- * - 命令中包含主机时间戳（steady_clock纳秒精度）
- * 
- * @see GimbalDelta, kRad2Deg
- */
-void Dm02Link::send(
+void LinkImpl::send(
   bool control, bool target_valid, float yaw, float /*yaw_vel*/, float /*yaw_acc*/, float pitch,
   float /*pitch_vel*/, float /*pitch_acc*/)
 {
@@ -364,11 +435,10 @@ void Dm02Link::send(
   communication::dm_02::GimbalDelta cmd;
   cmd.delta_yaw_udeg = static_cast<std::int32_t>(dyaw_rad * kRad2Deg * 1e6);
   cmd.delta_pitch_udeg = static_cast<std::int32_t>(dpitch_rad * kRad2Deg * 1e6);
-  // status bit0: target_valid (host has a valid target/command)
   cmd.status = target_valid ? 0x0001u : 0u;
   cmd.host_ts_ns = now_ns_steady();
 
   (void)impl_->driver.send_gimbal_delta(cmd);
 }
 
-}  // namespace io
+}  // namespace io::dm02::impl

@@ -1,5 +1,5 @@
-#ifndef IO__CONTROL_TYPES_HPP
-#define IO__CONTROL_TYPES_HPP
+#ifndef IO__DM02__TYPES__CONTROL_TYPES_HPP
+#define IO__DM02__TYPES__CONTROL_TYPES_HPP
 
 #include <array>
 #include <string_view>
@@ -13,10 +13,8 @@ enum Mode
   outpost
 };
 
-inline constexpr std::array<std::string_view, 3> MODES = {
-  "idle", "auto_aim", "outpost"};
+inline constexpr std::array<std::string_view, 3> MODES = {"idle", "auto_aim", "outpost"};
 
-// 哨兵专有
 enum ShootMode
 {
   left_shoot,
@@ -29,5 +27,4 @@ inline constexpr std::array<std::string_view, 3> SHOOT_MODES = {
 
 }  // namespace io
 
-#endif  // IO__CONTROL_TYPES_HPP
-
+#endif  // IO__DM02__TYPES__CONTROL_TYPES_HPP

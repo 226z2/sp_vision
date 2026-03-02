@@ -6,7 +6,7 @@
 #include <thread>
 
 #include "io/camera.hpp"
-#include "io/dm02_board.hpp"
+#include "io/dm02/dm02.hpp"
 #include "io/ros2/publish2nav.hpp"
 #include "io/ros2/ros2.hpp"
 #include "io/usbcamera/usbcamera.hpp"
@@ -43,7 +43,7 @@ int main(int argc, char * argv[])
   auto config_path = cli.get<std::string>(0);
 
   io::ROS2 ros2;
-  io::Dm02Board cboard(config_path);
+  io::Dm02 cboard(config_path);
   io::Camera camera(config_path);
   io::Camera back_camera("configs/camera.yaml");
   io::USBCamera usbcam1("video0", config_path);

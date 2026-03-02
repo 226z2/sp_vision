@@ -10,7 +10,7 @@
 #include <optional>
 #include <thread>
 
-#include "io/dm02_board.hpp"
+#include "io/dm02/dm02.hpp"
 #include "tasks/auto_aim/shooter.hpp"
 #include "tasks/auto_aim/tracker.hpp"
 #include "tasks/omniperception/decider.hpp"
@@ -25,7 +25,7 @@ class CommandGener
 {
 public:
   CommandGener(
-    auto_aim::Shooter & shooter, auto_aim::Aimer & aimer, io::Dm02Board & command_sender,
+    auto_aim::Shooter & shooter, auto_aim::Aimer & aimer, io::Dm02 & command_sender,
     tools::Plotter & plotter, bool debug = false);
 
   ~CommandGener();
@@ -44,7 +44,7 @@ private:
     Eigen::Vector3d gimbal_pos;
   };
 
-  io::Dm02Board & command_sender_;
+  io::Dm02 & command_sender_;
   auto_aim::Shooter & shooter_;
   auto_aim::Aimer & aimer_;
   tools::Plotter & plotter_;

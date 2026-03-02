@@ -15,7 +15,7 @@
 #include <thread>
 
 #include "io/camera.hpp"
-#include "io/control_types.hpp"
+#include "io/dm02/types/control_types.hpp"
 #include "io/ros2/publish2nav.hpp"
 #include "io/ros2/ros2.hpp"
 #include "io/usbcamera/usbcamera.hpp"
@@ -161,7 +161,7 @@ int main(int argc, char * argv[])
   omniperception::Decider decider(config_path);
 
   // 从yaml读取通信/弹速/左右枪配置（尽量沿用现有configs，减少对下位机(H7_new)改动）
-  // 注意：这里不再使用 io::Dm02Board/Dm02Link，是为了把发送/线程模型与 tests/auto_aim_test.cpp 完全对齐，便于后续补齐“发射下行协议”。
+  // 注意：这里不再使用 io::Dm02，是为了把发送/线程模型与 tests/auto_aim_test.cpp 完全对齐，便于后续补齐“发射下行协议”。
   const YAML::Node yaml = tools::load(config_path);
   std::string dm_endpoint;
   if (!dm_endpoint_override.empty()) {

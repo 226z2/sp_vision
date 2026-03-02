@@ -1,5 +1,5 @@
-#ifndef IO__GIMBAL_TYPES_HPP
-#define IO__GIMBAL_TYPES_HPP
+#ifndef IO__DM02__TYPES__GIMBAL_TYPES_HPP
+#define IO__DM02__TYPES__GIMBAL_TYPES_HPP
 
 #include <cstdint>
 
@@ -8,8 +8,8 @@ namespace io
 
 enum class GimbalMode
 {
-  IDLE,        // 空闲
-  AUTO_AIM     // 自瞄
+  IDLE,
+  AUTO_AIM
 };
 
 struct GimbalState
@@ -24,4 +24,4 @@ struct GimbalState
 
 }  // namespace io
 
-#endif  // IO__GIMBAL_TYPES_HPP
+#endif  // IO__DM02__TYPES__GIMBAL_TYPES_HPP

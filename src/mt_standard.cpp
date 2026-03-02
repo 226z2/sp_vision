@@ -3,7 +3,7 @@
 #include <thread>
 
 #include "io/camera.hpp"
-#include "io/dm02_board.hpp"
+#include "io/dm02/dm02.hpp"
 #include "tasks/auto_aim/aimer.hpp"
 #include "tasks/auto_aim/multithread/commandgener.hpp"
 #include "tasks/auto_aim/multithread/mt_detector.hpp"
@@ -37,7 +37,7 @@ int main(int argc, char * argv[])
   tools::Recorder recorder;
 
   io::Camera camera(config_path);
-  io::Dm02Board cboard(config_path);
+  io::Dm02 cboard(config_path);
 
   auto_aim::multithread::MultiThreadDetector detector(config_path);
   auto_aim::Solver solver(config_path);

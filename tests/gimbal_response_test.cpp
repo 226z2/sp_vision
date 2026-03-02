@@ -3,7 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <thread>
 
-#include "io/dm02_board.hpp"
+#include "io/dm02/dm02.hpp"
 #include "io/command.hpp"
 #include "tools/exiter.hpp"
 #include "tools/logger.hpp"
@@ -52,7 +52,7 @@ int main(int argc, char * argv[])
   tools::Exiter exiter;
   tools::Plotter plotter;
 
-  io::Dm02Board cboard(config_path);
+  io::Dm02 cboard(config_path);
 
   auto init_angle = 0;
   double slice = circle * 100;  //切片数=周期*帧率

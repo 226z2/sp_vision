@@ -1,4 +1,4 @@
-#include "io/dm02_link/dm02_link.hpp"
+#include "io/dm02/dm02.hpp"
 
 #include <chrono>
 #include <opencv2/opencv.hpp>
@@ -29,10 +29,10 @@ int main(int argc, char * argv[])
   tools::Exiter exiter;
   tools::Plotter plotter;
 
-  io::Dm02Link gimbal(config_path);
+  io::Dm02 gimbal(config_path);
 
   auto t0 = std::chrono::steady_clock::now();
-  auto last_mode = gimbal.mode();
+  auto last_mode = gimbal.gimbal_mode();
   uint16_t last_bullet_count = 0;
 
   auto fire = false;
@@ -41,7 +41,7 @@ int main(int argc, char * argv[])
   auto first_fired = false;
 
   while (!exiter.exit()) {
-    auto mode = gimbal.mode();
+    auto mode = gimbal.gimbal_mode();
 
     if (mode != last_mode) {
       tools::logger()->info("Gimbal mode changed: {}", gimbal.str(mode));

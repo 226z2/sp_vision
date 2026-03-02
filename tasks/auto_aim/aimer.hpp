@@ -7,7 +7,7 @@
 #include <optional>
 
 #include "io/command.hpp"
-#include "io/control_types.hpp"
+#include "io/dm02/types/control_types.hpp"
 #include "target.hpp"
 
 namespace auto_aim

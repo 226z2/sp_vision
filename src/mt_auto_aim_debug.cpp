@@ -5,7 +5,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "io/camera.hpp"
-#include "io/dm02_board.hpp"
+#include "io/dm02/dm02.hpp"
 #include "tasks/auto_aim/aimer.hpp"
 #include "tasks/auto_aim/multithread/commandgener.hpp"
 #include "tasks/auto_aim/multithread/mt_detector.hpp"
@@ -39,7 +39,7 @@ int main(int argc, char * argv[])
   tools::Plotter plotter;
   tools::Recorder recorder(100);  //根据实际帧率调整
 
-  io::Dm02Board cboard(config_path);
+  io::Dm02 cboard(config_path);
   io::Camera camera(config_path);
 
   auto_aim::multithread::MultiThreadDetector detector(config_path, true);

@@ -1,4 +1,4 @@
-#include "io/dm02_board.hpp"
+#include "io/dm02/dm02.hpp"
 
 #include <chrono>
 #include <opencv2/opencv.hpp>
@@ -25,7 +25,7 @@ int main(int argc, char * argv[])
 
   tools::Exiter exiter;
 
-  io::Dm02Board cboard(config_path);
+  io::Dm02 cboard(config_path);
 
   while (!exiter.exit()) {
     auto timestamp = std::chrono::steady_clock::now();

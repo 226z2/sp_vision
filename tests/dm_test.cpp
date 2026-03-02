@@ -4,7 +4,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "io/dm02_link/dm02_link.hpp"
+#include "io/dm02/dm02.hpp"
 #include "tools/exiter.hpp"
 #include "tools/logger.hpp"
 #include "tools/math_tools.hpp"
@@ -26,7 +26,7 @@ int main(int argc, char * argv[])
   auto config_path = cli.get<std::string>("@config-path");
 
   tools::Exiter exiter;
-  io::Dm02Link imu(config_path);
+  io::Dm02 imu(config_path);
 
   while (!exiter.exit()) {
     auto timestamp = std::chrono::steady_clock::now();

@@ -7,7 +7,7 @@
 #include <thread>
 
 #include "io/camera.hpp"
-#include "io/dm02_link/dm02_link.hpp"
+#include "io/dm02/dm02.hpp"
 #include "tasks/auto_aim/planner/planner.hpp"
 #include "tasks/auto_aim/solver.hpp"
 #include "tasks/auto_aim/tracker.hpp"
@@ -37,7 +37,7 @@ int main(int argc, char * argv[])
     return 0;
   }
 
-  io::Dm02Link gimbal(config_path);
+  io::Dm02 gimbal(config_path);
   io::Camera camera(config_path);
 
   auto_aim::YOLO yolo(config_path, true);

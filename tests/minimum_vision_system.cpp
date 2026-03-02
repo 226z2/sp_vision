@@ -3,7 +3,7 @@
 #include <thread>
 
 #include "io/camera.hpp"
-#include "io/dm02_link/dm02_link.hpp"
+#include "io/dm02/dm02.hpp"
 #include "tasks/auto_aim/aimer.hpp"
 #include "tasks/auto_aim/multithread/mt_detector.hpp"
 #include "tasks/auto_aim/shooter.hpp"
@@ -32,7 +32,7 @@ int main(int argc, char * argv[])
   tools::Exiter exiter;
   tools::Plotter plotter;
   io::Camera camera(config_path);
-  io::Dm02Link dm_imu(config_path);
+  io::Dm02 dm_imu(config_path);
 
   auto_aim::multithread::MultiThreadDetector detector(config_path);
   auto_aim::Solver solver(config_path);

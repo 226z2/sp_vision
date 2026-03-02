@@ -9,7 +9,7 @@
 #include <opencv2/core/eigen.hpp>
 
 #include "io/camera.hpp"
-#include "io/dm02_board.hpp"
+#include "io/dm02/dm02.hpp"
 #include "tasks/auto_aim/solver.hpp"
 #include "tools/exiter.hpp"
 #include "tools/img_tools.hpp"
@@ -39,7 +39,7 @@ int main(int argc, char * argv[])
   auto grid_num = yaml["grid_num"].as<int>();
   auto grid_size = yaml["grid_size"].as<double>();
   auto delay = yaml["delay"].as<int>();
-  io::Dm02Board cboard(config_path);
+  io::Dm02 cboard(config_path);
   io::Camera camera(config_path);
   auto_aim::Solver solver(config_path);
 

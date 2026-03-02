@@ -9,8 +9,8 @@ add_library(io STATIC
     hikrobot/hikrobot.cpp
     usbcamera/usbcamera.cpp
     camera.cpp
-    dm02_board.cpp
-  dm02_link/dm02_link.cpp
+    dm02/dm02.cpp
+    dm02/impl/link_impl.cpp
 )
 
 # hikrobot

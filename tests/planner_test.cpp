@@ -5,7 +5,7 @@
 #include <opencv2/opencv.hpp>
 #include <thread>
 
-#include "io/dm02_link/dm02_link.hpp"
+#include "io/dm02/dm02.hpp"
 #include "tools/exiter.hpp"
 #include "tools/logger.hpp"
 #include "tools/math_tools.hpp"
@@ -33,7 +33,7 @@ int main(int argc, char * argv[])
   tools::Exiter exiter;
   tools::Plotter plotter;
 
-  io::Dm02Link gimbal(config_path);
+  io::Dm02 gimbal(config_path);
   auto_aim::Planner planner(config_path);
   auto_aim::Target target(d, w, 0.2, 0.1);
 

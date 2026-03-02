@@ -15,7 +15,7 @@
 #include <thread>
 
 #include "io/camera.hpp"
-#include "io/control_types.hpp"
+#include "io/dm02/types/control_types.hpp"
 #include "io/ros2/publish2nav.hpp"
 #include "io/ros2/ros2.hpp"
 #include "io/usbcamera/usbcamera.hpp"
@@ -172,7 +172,7 @@ int main(int argc, char * argv[])
   omniperception::Decider decider(config_path);
 
   // 从yaml读取通信/弹速/左右枪配置（尽量沿用现有configs，减少对下位机(H7_new)改动）
-  // 注意：这里故意不再走 io::Dm02Board，是为了把本文件的“通信/收发/时戳/单位”与 tests/auto_aim_test.cpp 完全对齐，
+  // 注意：这里故意不再走 io::Dm02，是为了把本文件的“通信/收发/时戳/单位”与 tests/auto_aim_test.cpp 完全对齐，
   // 后续排查“能跟随但不能发射”这类协议缺失问题时，能够直接复用测试用例的经验。
   const YAML::Node yaml = tools::load(config_path);
   std::string dm_endpoint;
@@ -245,7 +245,7 @@ int main(int argc, char * argv[])
     camera.read(img, timestamp);
     // 通信侧上报的欧拉角为微度（deg * 1e6），与 tests/auto_aim_test.cpp 保持一致在主循环直接转四元数。
     // 注意：
-    // - 这里不做 imu_at(timestamp-1ms) 的插值/对齐（Dm02Link 那套做法），以“测试用例”为准先跑通协议链路
+    // - 这里不做 imu_at(timestamp-1ms) 的插值/对齐（旧链路做法），以“测试用例”为准先跑通协议链路
     // - 如果需要更精细的时域对齐（比如录包/回放），可以后续再引入 timesync 映射与插值队列
     Eigen::Quaterniond q = Eigen::Quaterniond::Identity();
     if (dm.driver && dm.have_state.load(std::memory_order_acquire)) {

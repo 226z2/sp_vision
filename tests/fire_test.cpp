@@ -1,6 +1,6 @@
 #include <fmt/format.h>
 
-#include "io/dm02_link/dm02_link.hpp"
+#include "io/dm02/dm02.hpp"
 #include "tools/exiter.hpp"
 #include "tools/img_tools.hpp"
 #include "tools/logger.hpp"
@@ -30,7 +30,7 @@ int main(int argc, char * argv[])
   tools::Exiter exiter;
 
   // 初始化云台
-  io::Dm02Link gimbal(config_path);
+  io::Dm02 gimbal(config_path);
   auto last_t = std::chrono::steady_clock::now();
   float yaw = 0.0F;
   float yaw_vel = 0.0F;
