@@ -1,0 +1,109 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from sp_msgs/msg/Dm02SerialCopyMsg.msg
+// generated code does not contain a copyright notice
+
+#include "builtin_interfaces/msg/Time.idl"
+
+module sp_msgs {
+  module msg {
+    @verbatim (language="comment", text=
+      "Message timestamp")
+    struct Dm02SerialCopyMsg {
+      builtin_interfaces::msg::Time timestamp;
+
+      @verbatim (language="comment", text=
+        "Link/driver status")
+      boolean established;
+
+      boolean have_state;
+
+      uint64 send_ok;
+
+      uint64 send_fail;
+
+      @verbatim (language="comment", text=
+        "Gimbal state copied from DM02 serial")
+      float yaw_rad;
+
+      float pitch_rad;
+
+      float roll_rad;
+
+      int32 enc_yaw;
+
+      int32 enc_pitch;
+
+      float yaw_vel_rad_s;
+
+      float pitch_vel_rad_s;
+
+      float bullet_speed_mps;
+
+      uint16 bullet_count;
+
+      int32 gimbal_mode;
+
+      int32 shoot_state;
+
+      int32 shooter_heat;
+
+      int32 shooter_heat_limit;
+
+      int32 projectile_allowance_17mm;
+
+      int32 projectile_allowance_42mm;
+
+      uint64 state_device_ts_us;
+
+      uint64 state_host_ts_ns;
+
+      @verbatim (language="comment", text=
+        "Referee state copied from DM02 serial")
+      boolean referee_valid;
+
+      int32 referee_enemy_team;
+
+      boolean referee_fire_allowed;
+
+      int32 referee_robot_id;
+
+      int32 referee_game_stage;
+
+      uint16 referee_status;
+
+      uint64 referee_device_ts_us;
+
+      uint64 referee_host_ts_ns;
+
+      @verbatim (language="comment", text=
+        "ToF/TFMini state copied from DM02 serial")
+      boolean tof_valid;
+
+      uint16 tof_distance_cm;
+
+      uint16 tof_strength;
+
+      int16 tof_temp_cdeg;
+
+      uint16 tof_status;
+
+      uint64 tof_device_ts_us;
+
+      uint64 tof_host_ts_ns;
+
+      @verbatim (language="comment", text=
+        "Time sync state copied from DM02 serial")
+      boolean timesync_valid;
+
+      int64 timesync_offset_us;
+
+      uint32 timesync_rtt_us;
+
+      uint32 timesync_version;
+
+      uint64 timesync_last_device_time_us;
+
+      uint64 timesync_last_host_time_us;
+    };
+  };
+};

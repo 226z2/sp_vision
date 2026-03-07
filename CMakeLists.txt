@@ -9,8 +9,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
 message(STATUS "--------------------CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}--------------------")
 
-# Communication stack (uproto + MUX + DM-02 host driver)
-add_subdirectory(third_party/Communication/modules EXCLUDE_FROM_ALL)
+set(SPV_PLOTTER_BACKEND "udp" CACHE STRING "Plotter backend: udp|foxglove")
+set_property(CACHE SPV_PLOTTER_BACKEND PROPERTY STRINGS udp foxglove)
+option(SPV_ENABLE_FOXGLOVE "Enable Foxglove debug transport support" OFF)
+option(SPV_LOGGER_FOXGLOVE_SINK "Mirror spdlog output to Foxglove.Log channel" OFF)
+set(SPV_FOXGLOVE_JPEG_QUALITY "60" CACHE STRING "JPEG quality for Foxglove compressed image")
+set(SPV_FLATC_PATH "${PROJECT_SOURCE_DIR}/tools/bin/flatc/linux-x86_64/flatc" CACHE FILEPATH "Path to flatc binary")
+set(SPV_FOXGLOVE_GENERATED_DIR "${PROJECT_SOURCE_DIR}/generated/foxglove" CACHE PATH "Output directory for generated Foxglove FlatBuffers")
+
+if(NOT SPV_PLOTTER_BACKEND STREQUAL "udp" AND NOT SPV_PLOTTER_BACKEND STREQUAL "foxglove")
+    message(FATAL_ERROR "SPV_PLOTTER_BACKEND must be udp or foxglove, got: ${SPV_PLOTTER_BACKEND}")
+endif()
+if(SPV_PLOTTER_BACKEND STREQUAL "foxglove")
+    set(SPV_ENABLE_FOXGLOVE ON)
+endif()
 
 find_package(OpenCV REQUIRED)
 find_package(Threads REQUIRED)
@@ -25,6 +37,41 @@ find_package(OpenVINO REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR})
+
+if(SPV_ENABLE_FOXGLOVE)
+    if(NOT EXISTS "${SPV_FLATC_PATH}")
+        message(FATAL_ERROR
+            "SPV_ENABLE_FOXGLOVE=ON requires flatc at ${SPV_FLATC_PATH}. "
+            "Run: bash tools/foxglove/download_flatc.sh")
+    endif()
+    if(NOT EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/flatbuffers/include/flatbuffers/flatbuffers.h")
+        message(FATAL_ERROR
+            "SPV_ENABLE_FOXGLOVE=ON requires FlatBuffers headers at "
+            "${PROJECT_SOURCE_DIR}/3rdparty/flatbuffers/include. "
+            "Download and extract the FlatBuffers release include tree there.")
+    endif()
+
+    if(NOT WEBSOCKETPP_INCLUDE_DIR)
+        set(WEBSOCKETPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/3rdparty/websocketpp")
+    endif()
+    add_subdirectory(3rdparty/ws-protocol)
+
+    file(GLOB SPV_FOXGLOVE_SCHEMA_FILES "${PROJECT_SOURCE_DIR}/3rdparty/ws-protocol/flatbuffers/*.fbs")
+    add_custom_command(
+        OUTPUT "${SPV_FOXGLOVE_GENERATED_DIR}/.stamp"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${SPV_FOXGLOVE_GENERATED_DIR}"
+        COMMAND /bin/bash "${PROJECT_SOURCE_DIR}/tools/foxglove/gen_schemas.sh"
+            "${SPV_FLATC_PATH}"
+            "${PROJECT_SOURCE_DIR}/3rdparty/ws-protocol/flatbuffers"
+            "${SPV_FOXGLOVE_GENERATED_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E touch "${SPV_FOXGLOVE_GENERATED_DIR}/.stamp"
+        DEPENDS
+            "${PROJECT_SOURCE_DIR}/tools/foxglove/gen_schemas.sh"
+            ${SPV_FOXGLOVE_SCHEMA_FILES}
+        VERBATIM
+    )
+    add_custom_target(spv_foxglove_codegen DEPENDS "${SPV_FOXGLOVE_GENERATED_DIR}/.stamp")
+endif()
 
 set(SP_THIRD_PARTY_TARGETS
     fmt::fmt
@@ -84,7 +131,7 @@ add_executable(dm_test tests/dm_test.cpp)
 add_executable(minimum_vision_system tests/minimum_vision_system.cpp)
 add_executable(communication_demo tests/communication_demo.cpp)
 
-target_link_libraries(auto_aim_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim Holon::communication::drivers Threads::Threads)
+target_link_libraries(auto_aim_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim Threads::Threads)
 target_link_libraries(camera_detect_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools auto_aim io)
 target_link_libraries(camera_test PRIVATE ${OpenCV_LIBS} fmt::fmt tools io)
 target_link_libraries(camera_thread_test PRIVATE ${OpenCV_LIBS} fmt::fmt auto_aim tools io)
@@ -98,7 +145,7 @@ target_link_libraries(usbcamera_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp to
 target_link_libraries(handeye_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 target_link_libraries(dm_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 target_link_libraries(minimum_vision_system PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
-target_link_libraries(communication_demo PRIVATE Holon::communication::drivers Threads::Threads)
+target_link_libraries(communication_demo PRIVATE io Threads::Threads)
 
 add_executable(gimbal_test tests/gimbal_test.cpp)
 target_link_libraries(gimbal_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)

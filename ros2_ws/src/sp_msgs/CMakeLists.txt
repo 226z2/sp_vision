@@ -8,6 +8,7 @@ find_package(builtin_interfaces REQUIRED)
 set(msg_files
   "msg/EnemyStatusMsg.msg"
   "msg/AutoaimTargetMsg.msg"
+  "msg/Dm02SerialCopyMsg.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

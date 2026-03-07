@@ -4,6 +4,7 @@
 
 #include "io/camera.hpp"
 #include "io/dm02/dm02.hpp"
+#include "tasks/auto_aim/planner/planner.hpp"
 #include "tasks/auto_aim/aimer.hpp"
 #include "tasks/auto_aim/multithread/commandgener.hpp"
 #include "tasks/auto_aim/multithread/mt_detector.hpp"
@@ -16,6 +17,7 @@
 #include "tools/math_tools.hpp"
 #include "tools/plotter.hpp"
 #include "tools/recorder.hpp"
+#include "src/referee_runtime.hpp"
 
 const std::string keys =
   "{help h usage ? | | 输出命令行参数说明}"
@@ -66,6 +68,10 @@ int main(int argc, char * argv[])
         auto gs = gimbal.state();
         auto plan = planner.plan(target, gs.bullet_speed);
 
+        if (!referee_runtime::can_fire(referee_runtime::from_io(gimbal.referee()))) {
+          plan.fire = false;
+        }
+
         gimbal.send(
           plan.control, plan.fire, plan.yaw, plan.yaw_vel, plan.yaw_acc, plan.pitch, plan.pitch_vel,
           plan.pitch_acc);
@@ -93,6 +99,11 @@ int main(int argc, char * argv[])
     /// 自瞄
     if (mode.load() == io::GimbalMode::AUTO_AIM) {
       auto armors = yolo.detect(img);
+      const auto ref = referee_runtime::from_io(gimbal.referee());
+      if (const auto color = referee_runtime::enemy_color(ref))
+        tracker.set_enemy_color(*color);
+      else
+        tracker.reset_enemy_color();
       auto targets = tracker.track(armors, t);
       if (!targets.empty())
         target_queue.push(targets.front());

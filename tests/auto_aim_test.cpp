@@ -27,9 +27,9 @@
 #include "tools/math_tools.hpp"
 #include "tools/plotter.hpp"
 
-#include "third_party/Communication/modules/communication/communication.hpp"
+#include "io/dm02/impl/dm02_driver.hpp"
 #if !defined(_WIN32)
-#include "third_party/Communication/modules/communication/drivers/dm_02/serial_transport_posix.hpp"
+#include "io/dm02/impl/serial_transport_posix.hpp"
 #endif
 
 namespace
@@ -86,6 +86,11 @@ struct DmWorker
   std::atomic<std::int32_t> yaw_udeg{0};
   std::atomic<std::int32_t> pitch_udeg{0};
   std::atomic<std::int32_t> roll_udeg{0};
+  std::atomic<std::int32_t> yaw_cmd_current{0};
+  std::atomic<std::int32_t> pitch_cmd_current{0};
+  std::atomic<std::int32_t> yaw_meas_current{0};
+  std::atomic<std::int32_t> pitch_meas_current{0};
+  std::atomic<std::int32_t> gimbal_mode{0};
 
   std::mutex cmd_mutex;
   std::optional<communication::dm_02::GimbalDelta> pending;
@@ -216,6 +221,11 @@ int main(int argc, char * argv[])
       dm.yaw_udeg.store(st.yaw_udeg, std::memory_order_release);
       dm.pitch_udeg.store(st.pitch_udeg, std::memory_order_release);
       dm.roll_udeg.store(st.roll_udeg, std::memory_order_release);
+      dm.yaw_cmd_current.store(st.yaw_cmd_current, std::memory_order_release);
+      dm.pitch_cmd_current.store(st.pitch_cmd_current, std::memory_order_release);
+      dm.yaw_meas_current.store(st.yaw_meas_current, std::memory_order_release);
+      dm.pitch_meas_current.store(st.pitch_meas_current, std::memory_order_release);
+      dm.gimbal_mode.store(st.gimbal_mode, std::memory_order_release);
       dm.have_state.store(true, std::memory_order_release);
     };
     dm.driver->set_callbacks(std::move(cb));
@@ -307,6 +317,11 @@ int main(int argc, char * argv[])
     auto command = aimer.aim(targets, timestamp, bullet_speed, false);
     if (!allow_shoot) command.shoot = false;
 
+    double sent_dyaw_rad = 0.0;
+    double sent_dpitch_rad = 0.0;
+    bool sent_control = false;
+    bool sent_target_valid = false;
+
     // If DM-02 is connected, send gimbal DELTA (error angles) to firmware.
     // Always send: when no valid target/command, send 0 delta and clear status bit0.
     if (dm.driver && dm_send && dm.established.load(std::memory_order_acquire)) {
@@ -330,6 +345,10 @@ int main(int argc, char * argv[])
       delta.host_ts_ns = static_cast<std::uint64_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(timestamp.time_since_epoch()).count());
       dm.queue_delta(delta);
+      sent_dyaw_rad = dyaw_rad;
+      sent_dpitch_rad = dpitch_rad;
+      sent_control = command.control;
+      sent_target_valid = command.control;
     }
 
     if (
@@ -367,6 +386,8 @@ int main(int argc, char * argv[])
 
     // 装甲板原始观测数据
     data["armor_num"] = armors.size();
+    data["target_num"] = targets.size();
+    data["tracker_state"] = tracker.state();
     if (!armors.empty()) {
       const auto & armor = armors.front();
       data["armor_x"] = armor.xyz_in_world[0];
@@ -381,9 +402,21 @@ int main(int argc, char * argv[])
     auto yaw = tools::eulers(q, 2, 1, 0)[0];
     data["gimbal_yaw"] = yaw * 57.3;
     data["cmd_yaw"] = command.yaw * 57.3;
+    data["control"] = command.control;
+    data["dm_send_dyaw_deg"] = sent_dyaw_rad * 57.3;
+    data["dm_send_dpitch_deg"] = sent_dpitch_rad * 57.3;
+    data["dm_send_control"] = sent_control;
+    data["dm_send_target_valid"] = sent_target_valid;
+    data["dm_established"] = dm.established.load(std::memory_order_acquire);
+    data["dm_send_ok"] = dm.send_ok.load(std::memory_order_acquire);
+    data["dm_send_fail"] = dm.send_fail.load(std::memory_order_acquire);
+    data["dm_pitch_cmd_current"] = dm.pitch_cmd_current.load(std::memory_order_acquire);
+    data["dm_yaw_meas_current"] = dm.yaw_meas_current.load(std::memory_order_acquire);
+    data["dm_pitch_meas_current"] = dm.pitch_meas_current.load(std::memory_order_acquire);
     data["shoot"] = command.shoot;
 
     if (!targets.empty()) {
+      const bool has_current_measurement = !armors.empty();
       auto target = targets.front();
 
       if (last_t == -1) {
@@ -396,18 +429,22 @@ int main(int argc, char * argv[])
 
       // 当前帧target更新后
       armor_xyza_list = target.armor_xyza_list();
-      for (const Eigen::Vector4d & xyza : armor_xyza_list) {
-        auto image_points =
-          solver.reproject_armor(xyza.head(3), xyza[3], target.armor_type, target.name);
-        tools::draw_points(img, image_points, {0, 255, 0});
+      if (has_current_measurement) {
+        for (const Eigen::Vector4d & xyza : armor_xyza_list) {
+          auto image_points =
+            solver.reproject_armor(xyza.head(3), xyza[3], target.armor_type, target.name);
+          tools::draw_points(img, image_points, {0, 255, 0});
+        }
       }
 
       // aimer瞄准位置
       auto aim_point = aimer.debug_aim_point;
       Eigen::Vector4d aim_xyza = aim_point.xyza;
-      auto image_points =
-        solver.reproject_armor(aim_xyza.head(3), aim_xyza[3], target.armor_type, target.name);
-      if (aim_point.valid) tools::draw_points(img, image_points, {0, 0, 255});
+      if (has_current_measurement) {
+        auto image_points =
+          solver.reproject_armor(aim_xyza.head(3), aim_xyza[3], target.armor_type, target.name);
+        if (aim_point.valid) tools::draw_points(img, image_points, {0, 0, 255});
+      }
 
       // 观测器内部数据
       Eigen::VectorXd x = target.ekf_x();
@@ -438,10 +475,10 @@ int main(int argc, char * argv[])
 
     plotter.plot(data);
 
-    cv::resize(img, img, {}, 0.5, 0.5);  // 显示时缩小图片尺寸
-    cv::imshow("reprojection", img);
-    auto key = cv::waitKey(30);
-    if (key == 'q') break;
+    // Headless debug output: publish frame to plotter backend (Foxglove when enabled).
+    cv::Mat preview;
+    cv::resize(img, preview, {}, 0.5, 0.5);
+    plotter.plot_image(preview, "reprojection");
   }
 
   return 0;

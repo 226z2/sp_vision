@@ -1,6 +1,8 @@
 #ifndef IO__ROS2_HPP
 #define IO__ROS2_HPP
 
+#include "sp_msgs/msg/dm02_serial_copy_msg.hpp"
+
 #include "publish2nav.hpp"
 #include "subscribe2nav.hpp"
 
@@ -14,6 +16,7 @@ public:
   ~ROS2();
 
   void publish(const Eigen::Vector4d & target_pos);
+  void publish_serial_copy(const sp_msgs::msg::Dm02SerialCopyMsg & msg);
 
   std::vector<int8_t> subscribe_enemy_status();
 

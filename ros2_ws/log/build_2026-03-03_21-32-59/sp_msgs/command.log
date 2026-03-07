@@ -1,0 +1,4 @@
+Invoking command in '/app/sp_vision/ros2_ws/build/sp_msgs': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /app/sp_vision/ros2_ws/build/sp_msgs -- -j20 -l20
+Invoked command in '/app/sp_vision/ros2_ws/build/sp_msgs' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /app/sp_vision/ros2_ws/build/sp_msgs -- -j20 -l20
+Invoking command in '/app/sp_vision/ros2_ws/build/sp_msgs': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /app/sp_vision/ros2_ws/build/sp_msgs
+Invoked command in '/app/sp_vision/ros2_ws/build/sp_msgs' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /app/sp_vision/ros2_ws/build/sp_msgs

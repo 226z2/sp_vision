@@ -2,6 +2,7 @@
 
 #include <Eigen/Geometry>
 
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <chrono>
@@ -32,11 +33,12 @@
 #include "tools/plotter.hpp"
 #include "tools/recorder.hpp"
 #include "tools/yaml.hpp"
+#include "src/referee_runtime.hpp"
 
 // 直接使用 third_party/Communication 的 DM-02 host driver（与 tests/auto_aim_test.cpp 一致）
-#include "modules/communication/drivers/dm_02/dm_02.hpp"
+#include "io/dm02/impl/dm02_driver.hpp"
 #if !defined(_WIN32)
-#include "modules/communication/drivers/dm_02/serial_transport_posix.hpp"
+#include "io/dm02/impl/serial_transport_posix.hpp"
 #endif
 
 using namespace std::chrono;
@@ -78,10 +80,49 @@ struct DmWorker
   std::atomic<std::int32_t> yaw_udeg{0};
   std::atomic<std::int32_t> pitch_udeg{0};
   std::atomic<std::int32_t> roll_udeg{0};
+  std::atomic<std::int32_t> enc_yaw{0};
+  std::atomic<std::int32_t> enc_pitch{0};
+  std::atomic<std::int32_t> gyro_yaw_udeps{0};
+  std::atomic<std::int32_t> gyro_pitch_udeps{0};
   std::atomic<std::int32_t> bullet_speed_x100{0};  // 下位机上报：m/s * 100（0 表示无效）
+  std::atomic<std::int32_t> bullet_count{0};
+  std::atomic<std::int32_t> gimbal_mode{0};
+  std::atomic<std::int32_t> shoot_state{0};
+  std::atomic<std::int32_t> shooter_heat{0};
+  std::atomic<std::int32_t> shooter_heat_limit{0};
+  std::atomic<std::int32_t> projectile_allowance_17mm{0};
+  std::atomic<std::int32_t> projectile_allowance_42mm{0};
+  std::atomic<std::uint64_t> state_device_ts_us{0};
+  std::atomic<std::uint64_t> state_host_ts_ns{0};
 
   std::mutex cmd_mutex;
   std::optional<communication::dm_02::GimbalDelta> pending;
+  std::optional<communication::dm_02::FireCommand> pending_fire;
+  std::optional<communication::dm_02::ChassisCommand> pending_chassis;
+
+  std::atomic<bool> referee_valid{false};
+  std::atomic<std::int32_t> referee_enemy_team{0};
+  std::atomic<std::int32_t> referee_fire_allowed{0};
+  std::atomic<std::int32_t> referee_robot_id{0};
+  std::atomic<std::int32_t> referee_game_stage{0};
+  std::atomic<std::uint16_t> referee_status{0};
+  std::atomic<std::uint64_t> referee_device_ts_us{0};
+  std::atomic<std::uint64_t> referee_host_ts_ns{0};
+
+  std::atomic<bool> tfmini_valid{false};
+  std::atomic<std::uint16_t> tfmini_distance_cm{0};
+  std::atomic<std::uint16_t> tfmini_strength{0};
+  std::atomic<std::int16_t> tfmini_temp_cdeg{0};
+  std::atomic<std::uint16_t> tfmini_status{0};
+  std::atomic<std::uint64_t> tfmini_device_ts_us{0};
+  std::atomic<std::uint64_t> tfmini_host_ts_ns{0};
+
+  std::atomic<bool> timesync_valid{false};
+  std::atomic<std::int64_t> timesync_offset_us{0};
+  std::atomic<std::uint32_t> timesync_rtt_us{0};
+  std::atomic<std::uint32_t> timesync_version{0};
+  std::atomic<std::uint64_t> timesync_last_device_time_us{0};
+  std::atomic<std::uint64_t> timesync_last_host_time_us{0};
 
   ~DmWorker() { stop(); }
 
@@ -91,6 +132,8 @@ struct DmWorker
     quit.store(false, std::memory_order_release);
     thread = std::thread([this] {
       using namespace std::chrono_literals;
+      auto last_ref_query_tp =
+        std::chrono::steady_clock::now() - std::chrono::milliseconds(1000);
       while (!quit.load(std::memory_order_acquire)) {
         try {
           // step() = poll + tick：包含握手、timesync、上行 state 回调等
@@ -100,14 +143,37 @@ struct DmWorker
 
         established.store(driver->established(), std::memory_order_release);
 
+        const auto now_tp = std::chrono::steady_clock::now();
+        if (driver->established() && (now_tp - last_ref_query_tp) >= std::chrono::milliseconds(300)) {
+          bool should_query = true;
+          const auto ref_host_ns = referee_host_ts_ns.load(std::memory_order_acquire);
+          if (ref_host_ns != 0) {
+            const auto now_ns = static_cast<std::uint64_t>(
+              std::chrono::duration_cast<std::chrono::nanoseconds>(now_tp.time_since_epoch()).count());
+            if (now_ns >= ref_host_ns && (now_ns - ref_host_ns) < referee_runtime::kRefereeStaleNs) {
+              should_query = false;
+            }
+          }
+          if (should_query) (void)driver->send_referee_query();
+          last_ref_query_tp = now_tp;
+        }
+
         // 发送策略：只保留最新一帧 delta（pending 会被覆盖），防止积压导致云台滞后
         std::optional<communication::dm_02::GimbalDelta> cmd;
+        std::optional<communication::dm_02::FireCommand> fire_cmd;
+        std::optional<communication::dm_02::ChassisCommand> chassis_cmd;
         {
           std::lock_guard<std::mutex> lock(cmd_mutex);
           cmd = pending;
           pending.reset();
+          fire_cmd = pending_fire;
+          pending_fire.reset();
+          chassis_cmd = pending_chassis;
+          pending_chassis.reset();
         }
         if (cmd) (void)driver->send_gimbal_delta(*cmd);
+        if (fire_cmd) (void)driver->send_fire_command(*fire_cmd);
+        if (chassis_cmd) (void)driver->send_chassis_command(*chassis_cmd);
 
         std::this_thread::sleep_for(2ms);
       }
@@ -125,6 +191,18 @@ struct DmWorker
   {
     std::lock_guard<std::mutex> lock(cmd_mutex);
     pending = delta;
+  }
+
+  void queue_fire(const communication::dm_02::FireCommand & fire)
+  {
+    std::lock_guard<std::mutex> lock(cmd_mutex);
+    pending_fire = fire;
+  }
+
+  void queue_chassis(const communication::dm_02::ChassisCommand & chassis)
+  {
+    std::lock_guard<std::mutex> lock(cmd_mutex);
+    pending_chassis = chassis;
   }
 };
 }  // namespace
@@ -161,7 +239,7 @@ int main(int argc, char * argv[])
   omniperception::Decider decider(config_path);
 
   // 从yaml读取通信/弹速/左右枪配置（尽量沿用现有configs，减少对下位机(H7_new)改动）
-  // 注意：这里不再使用 io::Dm02，是为了把发送/线程模型与 tests/auto_aim_test.cpp 完全对齐，便于后续补齐“发射下行协议”。
+  // 注意：这里不再使用 io::Dm02，是为了把发送/线程模型与 tests/auto_aim_test.cpp 完全对齐。
   const YAML::Node yaml = tools::load(config_path);
   std::string dm_endpoint;
   if (!dm_endpoint_override.empty()) {
@@ -195,17 +273,56 @@ int main(int argc, char * argv[])
     dm.driver = std::make_unique<communication::dm_02::Driver>(std::move(transport), cfg);
     communication::dm_02::Callbacks cb{};
     cb.on_uproto_event = [](std::string_view ev) { tools::logger()->info("[UPROTO] {}", ev); };
-    cb.on_timesync = [](const communication::dm_02::TimeSyncStatus & ts) {
+    cb.on_timesync = [&dm](const communication::dm_02::TimeSyncStatus & ts) {
+      dm.timesync_valid.store(ts.valid, std::memory_order_release);
+      dm.timesync_offset_us.store(ts.offset_us, std::memory_order_release);
+      dm.timesync_rtt_us.store(ts.rtt_us, std::memory_order_release);
+      dm.timesync_version.store(ts.version, std::memory_order_release);
+      dm.timesync_last_device_time_us.store(ts.last_device_time_us, std::memory_order_release);
+      dm.timesync_last_host_time_us.store(ts.last_host_time_us, std::memory_order_release);
       tools::logger()->info(
         "[TS] valid={} offset_us={} rtt_us={} ver={}", ts.valid, ts.offset_us, ts.rtt_us, ts.version);
     };
     cb.on_gimbal_state = [&dm](const communication::dm_02::GimbalState & st) {
-      // 仅缓存最新姿态/弹速，主循环直接读取这些原子变量计算 q 与 bullet_speed
+      // 缓存下位机原始状态，供主流程使用并镜像发布到 ROS。
       dm.yaw_udeg.store(st.yaw_udeg, std::memory_order_release);
       dm.pitch_udeg.store(st.pitch_udeg, std::memory_order_release);
       dm.roll_udeg.store(st.roll_udeg, std::memory_order_release);
+      dm.enc_yaw.store(st.enc_yaw, std::memory_order_release);
+      dm.enc_pitch.store(st.enc_pitch, std::memory_order_release);
+      dm.gyro_yaw_udeps.store(st.gyro_yaw_udeps, std::memory_order_release);
+      dm.gyro_pitch_udeps.store(st.gyro_pitch_udeps, std::memory_order_release);
       dm.bullet_speed_x100.store(st.bullet_speed_x100, std::memory_order_release);
+      dm.bullet_count.store(st.bullet_count, std::memory_order_release);
+      dm.gimbal_mode.store(st.gimbal_mode, std::memory_order_release);
+      dm.shoot_state.store(st.shoot_state, std::memory_order_release);
+      dm.shooter_heat.store(st.shooter_heat, std::memory_order_release);
+      dm.shooter_heat_limit.store(st.shooter_heat_limit, std::memory_order_release);
+      dm.projectile_allowance_17mm.store(st.projectile_allowance_17mm, std::memory_order_release);
+      dm.projectile_allowance_42mm.store(st.projectile_allowance_42mm, std::memory_order_release);
+      dm.state_device_ts_us.store(st.device_ts_us, std::memory_order_release);
+      dm.state_host_ts_ns.store(st.host_ts_ns, std::memory_order_release);
       dm.have_state.store(true, std::memory_order_release);
+    };
+    cb.on_gimbal_tfmini = [&dm](const communication::dm_02::GimbalTfmini & tf) {
+      dm.tfmini_valid.store(true, std::memory_order_release);
+      dm.tfmini_distance_cm.store(tf.distance_cm, std::memory_order_release);
+      dm.tfmini_strength.store(tf.strength, std::memory_order_release);
+      dm.tfmini_temp_cdeg.store(tf.temp_cdeg, std::memory_order_release);
+      dm.tfmini_status.store(tf.status, std::memory_order_release);
+      dm.tfmini_device_ts_us.store(tf.device_ts_us, std::memory_order_release);
+      dm.tfmini_host_ts_ns.store(tf.host_ts_ns, std::memory_order_release);
+    };
+    cb.on_referee_status = [&dm](const communication::dm_02::RefereeStatus & rs) {
+      const bool valid = (rs.status != 0) ? ((rs.status & 0x0001u) != 0) : true;
+      dm.referee_valid.store(valid, std::memory_order_release);
+      dm.referee_enemy_team.store(rs.enemy_team, std::memory_order_release);
+      dm.referee_fire_allowed.store(rs.fire_allowed, std::memory_order_release);
+      dm.referee_robot_id.store(rs.robot_id, std::memory_order_release);
+      dm.referee_game_stage.store(rs.game_stage, std::memory_order_release);
+      dm.referee_status.store(rs.status, std::memory_order_release);
+      dm.referee_device_ts_us.store(rs.device_ts_us, std::memory_order_release);
+      dm.referee_host_ts_ns.store(rs.host_ts_ns, std::memory_order_release);
     };
     dm.driver->set_callbacks(std::move(cb));
 
@@ -253,11 +370,21 @@ int main(int argc, char * argv[])
 
     auto armors = yolo.detect(img);
 
-    decider.get_invincible_armor(ros2.subscribe_enemy_status());
+    referee_runtime::RefereeView ref{};
+    ref.valid = dm.referee_valid.load(std::memory_order_acquire);
+    ref.enemy_team = dm.referee_enemy_team.load(std::memory_order_acquire);
+    ref.fire_allowed = (dm.referee_fire_allowed.load(std::memory_order_acquire) != 0);
+    ref.host_ts_ns = dm.referee_host_ts_ns.load(std::memory_order_acquire);
+
+    if (const auto color = referee_runtime::enemy_color(ref)) {
+      tracker.set_enemy_color(*color);
+      decider.set_enemy_color(*color);
+    } else {
+      tracker.reset_enemy_color();
+      decider.reset_enemy_color();
+    }
 
     decider.armor_filter(armors);
-
-    // decider.get_auto_aim_target(armors, ros2.subscribe_autoaim_target());
 
     decider.set_priority(armors);
 
@@ -283,12 +410,10 @@ int main(int argc, char * argv[])
     /// 发射逻辑
     command.shoot = shooter.shoot(command, aimer, targets, gimbal_pos);
 
-    // 安全开关：默认不允许 shoot 生效（当前 DM-02 下行仅实现云台 delta；“开火命令”协议需要另行补齐）
-    if (!allow_shoot) command.shoot = false;
+    // 安全开关：默认不允许 shoot 生效；referee无效/超时/禁射时也强制禁射。
+    if (!allow_shoot || !referee_runtime::can_fire(ref)) command.shoot = false;
 
-    // 与 tests/auto_aim_test.cpp 保持一致：下发云台“相对角度误差 delta”
-    // - 有目标：发送误差角 + status bit0=1
-    // - 无目标：发送 0 delta + status bit0=0（通知下位机清“有目标”状态）
+    // 下发云台“相对角度误差 delta”与开火命令（开火命令等价于旧 CBoard::send(command.shoot) 语义）
     if (dm.driver && dm_send && dm.established.load(std::memory_order_acquire)) {
       const auto ypr = tools::eulers(q, 2, 1, 0);
       const double gimbal_yaw = ypr[0];
@@ -309,12 +434,90 @@ int main(int argc, char * argv[])
       delta.host_ts_ns = static_cast<std::uint64_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(timestamp.time_since_epoch()).count());
       dm.queue_delta(delta);
+
+      communication::dm_02::FireCommand fire{};
+      fire.fire_on = command.shoot ? 1 : 0;
+      fire.fire_mode = 2;                    // continuous press semantics (fire_on controls on/off)
+      fire.burst_count = command.shoot ? 2 : 0;
+      fire.status = command.control ? 0x0001u : 0u;
+      fire.host_ts_ns = delta.host_ts_ns;
+      dm.queue_fire(fire);
+
+      communication::dm_02::ChassisCommand chassis{};
+      chassis.vx_mm_s = 0;
+      chassis.vy_mm_s = 0;
+      chassis.wz_mdeg_s = 0;
+      chassis.mode = 3;  // no move
+      chassis.status = 0u;
+      chassis.host_ts_ns = delta.host_ts_ns;
+      dm.queue_chassis(chassis);
     }
 
     /// ROS2通信
     Eigen::Vector4d target_info = decider.get_target_info(armors, targets);
 
     ros2.publish(target_info);
+
+    sp_msgs::msg::Dm02SerialCopyMsg serial_copy{};
+    serial_copy.timestamp = rclcpp::Clock().now();
+    serial_copy.established = dm.established.load(std::memory_order_acquire);
+    serial_copy.have_state = dm.have_state.load(std::memory_order_acquire);
+    serial_copy.send_ok = 0;
+    serial_copy.send_fail = 0;
+
+    serial_copy.yaw_rad =
+      static_cast<float>((static_cast<double>(dm.yaw_udeg.load(std::memory_order_acquire)) / 1000000.0) * kDeg2Rad);
+    serial_copy.pitch_rad =
+      static_cast<float>((static_cast<double>(dm.pitch_udeg.load(std::memory_order_acquire)) / 1000000.0) * kDeg2Rad);
+    serial_copy.roll_rad =
+      static_cast<float>((static_cast<double>(dm.roll_udeg.load(std::memory_order_acquire)) / 1000000.0) * kDeg2Rad);
+    serial_copy.enc_yaw = dm.enc_yaw.load(std::memory_order_acquire);
+    serial_copy.enc_pitch = dm.enc_pitch.load(std::memory_order_acquire);
+    serial_copy.yaw_vel_rad_s = static_cast<float>(
+      (static_cast<double>(dm.gyro_yaw_udeps.load(std::memory_order_acquire)) / 1000000.0) *
+      kDeg2Rad);
+    serial_copy.pitch_vel_rad_s = static_cast<float>(
+      (static_cast<double>(dm.gyro_pitch_udeps.load(std::memory_order_acquire)) / 1000000.0) *
+      kDeg2Rad);
+    serial_copy.bullet_speed_mps = static_cast<float>(
+      static_cast<double>(dm.bullet_speed_x100.load(std::memory_order_acquire)) / 100.0);
+    serial_copy.bullet_count = static_cast<std::uint16_t>(
+      std::max(0, dm.bullet_count.load(std::memory_order_acquire)));
+    serial_copy.gimbal_mode = dm.gimbal_mode.load(std::memory_order_acquire);
+    serial_copy.shoot_state = dm.shoot_state.load(std::memory_order_acquire);
+    serial_copy.shooter_heat = dm.shooter_heat.load(std::memory_order_acquire);
+    serial_copy.shooter_heat_limit = dm.shooter_heat_limit.load(std::memory_order_acquire);
+    serial_copy.projectile_allowance_17mm = dm.projectile_allowance_17mm.load(std::memory_order_acquire);
+    serial_copy.projectile_allowance_42mm = dm.projectile_allowance_42mm.load(std::memory_order_acquire);
+    serial_copy.state_device_ts_us = dm.state_device_ts_us.load(std::memory_order_acquire);
+    serial_copy.state_host_ts_ns = dm.state_host_ts_ns.load(std::memory_order_acquire);
+
+    serial_copy.referee_valid = dm.referee_valid.load(std::memory_order_acquire);
+    serial_copy.referee_enemy_team = dm.referee_enemy_team.load(std::memory_order_acquire);
+    serial_copy.referee_fire_allowed = dm.referee_fire_allowed.load(std::memory_order_acquire) != 0;
+    serial_copy.referee_robot_id = dm.referee_robot_id.load(std::memory_order_acquire);
+    serial_copy.referee_game_stage = dm.referee_game_stage.load(std::memory_order_acquire);
+    serial_copy.referee_status = dm.referee_status.load(std::memory_order_acquire);
+    serial_copy.referee_device_ts_us = dm.referee_device_ts_us.load(std::memory_order_acquire);
+    serial_copy.referee_host_ts_ns = dm.referee_host_ts_ns.load(std::memory_order_acquire);
+
+    serial_copy.tof_valid = dm.tfmini_valid.load(std::memory_order_acquire);
+    serial_copy.tof_distance_cm = dm.tfmini_distance_cm.load(std::memory_order_acquire);
+    serial_copy.tof_strength = dm.tfmini_strength.load(std::memory_order_acquire);
+    serial_copy.tof_temp_cdeg = dm.tfmini_temp_cdeg.load(std::memory_order_acquire);
+    serial_copy.tof_status = dm.tfmini_status.load(std::memory_order_acquire);
+    serial_copy.tof_device_ts_us = dm.tfmini_device_ts_us.load(std::memory_order_acquire);
+    serial_copy.tof_host_ts_ns = dm.tfmini_host_ts_ns.load(std::memory_order_acquire);
+
+    serial_copy.timesync_valid = dm.timesync_valid.load(std::memory_order_acquire);
+    serial_copy.timesync_offset_us = dm.timesync_offset_us.load(std::memory_order_acquire);
+    serial_copy.timesync_rtt_us = dm.timesync_rtt_us.load(std::memory_order_acquire);
+    serial_copy.timesync_version = dm.timesync_version.load(std::memory_order_acquire);
+    serial_copy.timesync_last_device_time_us =
+      dm.timesync_last_device_time_us.load(std::memory_order_acquire);
+    serial_copy.timesync_last_host_time_us = dm.timesync_last_host_time_us.load(std::memory_order_acquire);
+
+    ros2.publish_serial_copy(serial_copy);
   }
   return 0;
 }

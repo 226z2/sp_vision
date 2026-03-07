@@ -1,0 +1,584 @@
+[0.000000] (-) TimerEvent: {}
+[0.000313] (sp_msgs) JobQueued: {'identifier': 'sp_msgs', 'dependencies': OrderedDict()}
+[0.000623] (sp_msgs) JobStarted: {'identifier': 'sp_msgs'}
+[0.031366] (sp_msgs) JobProgress: {'identifier': 'sp_msgs', 'progress': 'cmake'}
+[0.055838] (sp_msgs) Command: {'cmd': ['/usr/bin/cmake', '/app/sp_vision/ros2_ws/src/sp_msgs', '-DCATKIN_INSTALL_INTO_PREFIX_ROOT=0', '-DCATKIN_SYMLINK_INSTALL=ON', '-DCMAKE_INSTALL_PREFIX=/app/sp_vision/ros2_ws/install'], 'cwd': '/app/sp_vision/ros2_ws/build/sp_msgs', 'env': OrderedDict({'HOSTNAME': 'DESKTOP-Q7EV71U', 'OPENVINO_ROOT': '/opt/intel/openvino_latest', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/lib:/opt/spdlog/lib:/opt/fmt/lib:/opt/yaml-cpp/lib:/opt/opencv/lib:/opt/ceres/lib:/opt/intel/openvino_latest/runtime/lib/intel64', 'HOME': '/root', 'OLDPWD': '/app/sp_vision', 'ROS_PYTHON_VERSION': '3', 'LC_CTYPE': 'C.UTF-8', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'PKG_CONFIG_PATH': '/opt/spdlog/lib/pkgconfig:/opt/fmt/lib/pkgconfig:/opt/yaml-cpp/lib/pkgconfig:/opt/opencv/lib/pkgconfig:/opt/ceres/lib/pkgconfig', 'PATH': '/opt/ros/jazzy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'PWD': '/app/sp_vision/ros2_ws/build/sp_msgs', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'TZ': 'Asia/Shanghai', 'COLCON': '1', 'OpenVINO_DIR': '/opt/intel/openvino_latest/runtime/cmake', 'CMAKE_PREFIX_PATH': '/opt/spdlog:/opt/fmt:/opt/json:/opt/yaml-cpp:/opt/opencv:/opt/ceres:/opt/intel/openvino_latest/runtime/cmake:/usr/lib/cmake/openvino'}), 'shell': False}
+[0.098737] (-) TimerEvent: {}
+[0.199137] (-) TimerEvent: {}
+[0.299977] (-) TimerEvent: {}
+[0.400439] (-) TimerEvent: {}
+[0.420416] (sp_msgs) StdoutLine: {'line': b'-- The C compiler identification is GNU 13.3.0\n'}
+[0.500554] (-) TimerEvent: {}
+[0.600948] (-) TimerEvent: {}
+[0.707890] (-) TimerEvent: {}
+[0.713911] (sp_msgs) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 13.3.0\n'}
+[0.768469] (sp_msgs) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[0.808002] (-) TimerEvent: {}
+[0.908793] (-) TimerEvent: {}
+[1.011272] (-) TimerEvent: {}
+[1.114380] (-) TimerEvent: {}
+[1.214803] (-) TimerEvent: {}
+[1.315426] (-) TimerEvent: {}
+[1.406507] (sp_msgs) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[1.415572] (-) TimerEvent: {}
+[1.447685] (sp_msgs) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc - skipped\n'}
+[1.451467] (sp_msgs) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[1.452079] (sp_msgs) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[1.508291] (sp_msgs) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[1.515710] (-) TimerEvent: {}
+[1.616647] (-) TimerEvent: {}
+[1.717345] (-) TimerEvent: {}
+[1.817644] (-) TimerEvent: {}
+[1.917930] (-) TimerEvent: {}
+[2.019567] (-) TimerEvent: {}
+[2.119899] (-) TimerEvent: {}
+[2.145074] (sp_msgs) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[2.168605] (sp_msgs) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ - skipped\n'}
+[2.169156] (sp_msgs) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[2.169622] (sp_msgs) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[2.220009] (-) TimerEvent: {}
+[2.227969] (sp_msgs) StdoutLine: {'line': b'-- Found ament_cmake: 2.5.5 (/opt/ros/jazzy/share/ament_cmake/cmake)\n'}
+[2.320178] (-) TimerEvent: {}
+[2.372656] (sp_msgs) StdoutLine: {'line': b'-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter \n'}
+[2.420277] (-) TimerEvent: {}
+[2.520648] (-) TimerEvent: {}
+[2.621050] (-) TimerEvent: {}
+[2.721340] (-) TimerEvent: {}
+[2.801088] (sp_msgs) StdoutLine: {'line': b'-- Found rosidl_default_generators: 1.6.0 (/opt/ros/jazzy/share/rosidl_default_generators/cmake)\n'}
+[2.821500] (-) TimerEvent: {}
+[2.848562] (sp_msgs) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[2.921678] (-) TimerEvent: {}
+[3.024050] (-) TimerEvent: {}
+[3.124447] (-) TimerEvent: {}
+[3.225455] (-) TimerEvent: {}
+[3.258942] (sp_msgs) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[3.325568] (-) TimerEvent: {}
+[3.426301] (-) TimerEvent: {}
+[3.527177] (-) TimerEvent: {}
+[3.540206] (sp_msgs) StdoutLine: {'line': b'-- Found rosidl_adapter: 4.6.7 (/opt/ros/jazzy/share/rosidl_adapter/cmake)\n'}
+[3.564869] (sp_msgs) StdoutLine: {'line': b'-- Found builtin_interfaces: 2.0.3 (/opt/ros/jazzy/share/builtin_interfaces/cmake)\n'}
+[3.627328] (-) TimerEvent: {}
+[3.731948] (-) TimerEvent: {}
+[3.832544] (-) TimerEvent: {}
+[3.932896] (-) TimerEvent: {}
+[4.035011] (-) TimerEvent: {}
+[4.135393] (-) TimerEvent: {}
+[4.236657] (-) TimerEvent: {}
+[4.337134] (-) TimerEvent: {}
+[4.438434] (-) TimerEvent: {}
+[4.538963] (-) TimerEvent: {}
+[4.639277] (-) TimerEvent: {}
+[4.739557] (-) TimerEvent: {}
+[4.841083] (-) TimerEvent: {}
+[4.941691] (-) TimerEvent: {}
+[5.050898] (-) TimerEvent: {}
+[5.151596] (-) TimerEvent: {}
+[5.252041] (-) TimerEvent: {}
+[5.273045] (sp_msgs) StdoutLine: {'line': b'-- Found ament_cmake_ros: 0.12.0 (/opt/ros/jazzy/share/ament_cmake_ros/cmake)\n'}
+[5.352189] (-) TimerEvent: {}
+[5.452546] (-) TimerEvent: {}
+[5.553639] (-) TimerEvent: {}
+[5.654047] (-) TimerEvent: {}
+[5.755323] (-) TimerEvent: {}
+[5.855844] (-) TimerEvent: {}
+[5.956620] (-) TimerEvent: {}
+[6.058896] (-) TimerEvent: {}
+[6.159824] (-) TimerEvent: {}
+[6.260409] (-) TimerEvent: {}
+[6.368262] (-) TimerEvent: {}
+[6.468798] (-) TimerEvent: {}
+[6.587551] (-) TimerEvent: {}
+[6.688020] (-) TimerEvent: {}
+[6.788479] (-) TimerEvent: {}
+[6.888877] (-) TimerEvent: {}
+[6.991412] (-) TimerEvent: {}
+[7.061090] (sp_msgs) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[7.091556] (-) TimerEvent: {}
+[7.192104] (-) TimerEvent: {}
+[7.292625] (-) TimerEvent: {}
+[7.393085] (-) TimerEvent: {}
+[7.493735] (-) TimerEvent: {}
+[7.594236] (-) TimerEvent: {}
+[7.694703] (-) TimerEvent: {}
+[7.795060] (-) TimerEvent: {}
+[7.895394] (-) TimerEvent: {}
+[7.995961] (-) TimerEvent: {}
+[8.096823] (-) TimerEvent: {}
+[8.197311] (-) TimerEvent: {}
+[8.297733] (-) TimerEvent: {}
+[8.398242] (-) TimerEvent: {}
+[8.498602] (-) TimerEvent: {}
+[8.599054] (-) TimerEvent: {}
+[8.699346] (-) TimerEvent: {}
+[8.800564] (-) TimerEvent: {}
+[8.900997] (-) TimerEvent: {}
+[9.002975] (-) TimerEvent: {}
+[9.088104] (sp_msgs) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[9.103106] (-) TimerEvent: {}
+[9.109541] (sp_msgs) StdoutLine: {'line': b'-- Found python_cmake_module: 0.11.1 (/opt/ros/jazzy/share/python_cmake_module/cmake)\n'}
+[9.203214] (-) TimerEvent: {}
+[9.209612] (sp_msgs) StdoutLine: {'line': b'-- Found PythonExtra: /usr/bin/python3  \n'}
+[9.303371] (-) TimerEvent: {}
+[9.404426] (-) TimerEvent: {}
+[9.505473] (-) TimerEvent: {}
+[9.605842] (-) TimerEvent: {}
+[9.706216] (-) TimerEvent: {}
+[9.769150] (sp_msgs) StdoutLine: {'line': b'-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter Development NumPy Development.Module Development.Embed \n'}
+[9.806387] (-) TimerEvent: {}
+[9.909915] (-) TimerEvent: {}
+[10.014402] (-) TimerEvent: {}
+[10.115638] (-) TimerEvent: {}
+[10.216027] (-) TimerEvent: {}
+[10.316326] (-) TimerEvent: {}
+[10.416864] (-) TimerEvent: {}
+[10.517908] (-) TimerEvent: {}
+[10.618337] (-) TimerEvent: {}
+[10.718642] (-) TimerEvent: {}
+[10.819028] (-) TimerEvent: {}
+[10.919434] (-) TimerEvent: {}
+[11.020445] (-) TimerEvent: {}
+[11.121144] (-) TimerEvent: {}
+[11.197133] (sp_msgs) StdoutLine: {'line': b'-- Configuring done (11.1s)\n'}
+[11.221280] (-) TimerEvent: {}
+[11.321537] (-) TimerEvent: {}
+[11.421842] (-) TimerEvent: {}
+[11.522223] (-) TimerEvent: {}
+[11.622735] (-) TimerEvent: {}
+[11.723311] (-) TimerEvent: {}
+[11.823828] (-) TimerEvent: {}
+[11.924349] (-) TimerEvent: {}
+[12.031627] (-) TimerEvent: {}
+[12.131902] (-) TimerEvent: {}
+[12.232393] (-) TimerEvent: {}
+[12.334231] (-) TimerEvent: {}
+[12.434671] (-) TimerEvent: {}
+[12.536424] (-) TimerEvent: {}
+[12.637020] (-) TimerEvent: {}
+[12.737855] (-) TimerEvent: {}
+[12.838373] (-) TimerEvent: {}
+[12.938787] (-) TimerEvent: {}
+[13.039145] (-) TimerEvent: {}
+[13.139445] (-) TimerEvent: {}
+[13.240585] (-) TimerEvent: {}
+[13.327995] (sp_msgs) StdoutLine: {'line': b'-- Generating done (2.0s)\n'}
+[13.340718] (-) TimerEvent: {}
+[13.441084] (-) TimerEvent: {}
+[13.541590] (-) TimerEvent: {}
+[13.555469] (sp_msgs) StderrLine: {'line': b'CMake Warning:\n'}
+[13.556096] (sp_msgs) StderrLine: {'line': b'  Manually-specified variables were not used by the project:\n'}
+[13.557624] (sp_msgs) StderrLine: {'line': b'\n'}
+[13.560399] (sp_msgs) StderrLine: {'line': b'    CATKIN_INSTALL_INTO_PREFIX_ROOT\n'}
+[13.563518] (sp_msgs) StderrLine: {'line': b'    CATKIN_SYMLINK_INSTALL\n'}
+[13.565342] (sp_msgs) StderrLine: {'line': b'\n'}
+[13.567359] (sp_msgs) StderrLine: {'line': b'\n'}
+[13.641716] (-) TimerEvent: {}
+[13.743473] (-) TimerEvent: {}
+[13.844448] (-) TimerEvent: {}
+[13.944713] (-) TimerEvent: {}
+[14.046679] (-) TimerEvent: {}
+[14.146959] (-) TimerEvent: {}
+[14.205584] (sp_msgs) StdoutLine: {'line': b'-- Build files have been written to: /app/sp_vision/ros2_ws/build/sp_msgs\n'}
+[14.211164] (sp_msgs) CommandEnded: {'returncode': 0}
+[14.221388] (sp_msgs) JobProgress: {'identifier': 'sp_msgs', 'progress': 'build'}
+[14.223931] (sp_msgs) Command: {'cmd': ['/usr/bin/cmake', '--build', '/app/sp_vision/ros2_ws/build/sp_msgs', '--', '-j20', '-l20'], 'cwd': '/app/sp_vision/ros2_ws/build/sp_msgs', 'env': OrderedDict({'HOSTNAME': 'DESKTOP-Q7EV71U', 'OPENVINO_ROOT': '/opt/intel/openvino_latest', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/lib:/opt/spdlog/lib:/opt/fmt/lib:/opt/yaml-cpp/lib:/opt/opencv/lib:/opt/ceres/lib:/opt/intel/openvino_latest/runtime/lib/intel64', 'HOME': '/root', 'OLDPWD': '/app/sp_vision', 'ROS_PYTHON_VERSION': '3', 'LC_CTYPE': 'C.UTF-8', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'PKG_CONFIG_PATH': '/opt/spdlog/lib/pkgconfig:/opt/fmt/lib/pkgconfig:/opt/yaml-cpp/lib/pkgconfig:/opt/opencv/lib/pkgconfig:/opt/ceres/lib/pkgconfig', 'PATH': '/opt/ros/jazzy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'PWD': '/app/sp_vision/ros2_ws/build/sp_msgs', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'TZ': 'Asia/Shanghai', 'COLCON': '1', 'OpenVINO_DIR': '/opt/intel/openvino_latest/runtime/cmake', 'CMAKE_PREFIX_PATH': '/opt/spdlog:/opt/fmt:/opt/json:/opt/yaml-cpp:/opt/opencv:/opt/ceres:/opt/intel/openvino_latest/runtime/cmake:/usr/lib/cmake/openvino'}), 'shell': False}
+[14.247074] (-) TimerEvent: {}
+[14.347398] (-) TimerEvent: {}
+[14.406578] (sp_msgs) StdoutLine: {'line': b'[  2%] Generating type hashes for ROS interfaces\n'}
+[14.434897] (sp_msgs) StdoutLine: {'line': b'[  2%] Built target ament_cmake_python_copy_sp_msgs\n'}
+[14.447498] (-) TimerEvent: {}
+[14.547807] (-) TimerEvent: {}
+[14.642708] (sp_msgs) StdoutLine: {'line': b'running egg_info\n'}
+[14.644756] (sp_msgs) StdoutLine: {'line': b'creating sp_msgs.egg-info\n'}
+[14.647914] (-) TimerEvent: {}
+[14.655568] (sp_msgs) StdoutLine: {'line': b'writing sp_msgs.egg-info/PKG-INFO\n'}
+[14.672334] (sp_msgs) StdoutLine: {'line': b'writing dependency_links to sp_msgs.egg-info/dependency_links.txt\n'}
+[14.689942] (sp_msgs) StdoutLine: {'line': b'writing top-level names to sp_msgs.egg-info/top_level.txt\n'}
+[14.701050] (sp_msgs) StdoutLine: {'line': b"writing manifest file 'sp_msgs.egg-info/SOURCES.txt'\n"}
+[14.732432] (sp_msgs) StdoutLine: {'line': b'[  2%] Built target sp_msgs__rosidl_generator_type_description\n'}
+[14.748034] (-) TimerEvent: {}
+[14.754950] (sp_msgs) StdoutLine: {'line': b"reading manifest file 'sp_msgs.egg-info/SOURCES.txt'\n"}
+[14.785200] (sp_msgs) StdoutLine: {'line': b'[  4%] Generating C code for ROS interfaces\n'}
+[14.789286] (sp_msgs) StdoutLine: {'line': b"writing manifest file 'sp_msgs.egg-info/SOURCES.txt'\n"}
+[14.819075] (sp_msgs) StdoutLine: {'line': b'[  6%] Built target ament_cmake_python_build_sp_msgs_egg\n'}
+[14.820200] (sp_msgs) StdoutLine: {'line': b'[  6%] Generating C++ code for ROS interfaces\n'}
+[14.848146] (-) TimerEvent: {}
+[14.949028] (-) TimerEvent: {}
+[15.049536] (-) TimerEvent: {}
+[15.150302] (-) TimerEvent: {}
+[15.250940] (-) TimerEvent: {}
+[15.268004] (sp_msgs) StdoutLine: {'line': b'[  6%] Built target sp_msgs__cpp\n'}
+[15.351062] (-) TimerEvent: {}
+[15.423303] (sp_msgs) StdoutLine: {'line': b'[  9%] Building C object CMakeFiles/sp_msgs__rosidl_generator_c.dir/rosidl_generator_c/sp_msgs/msg/detail/enemy_status_msg__description.c.o\n'}
+[15.428853] (sp_msgs) StdoutLine: {'line': b'[ 11%] Building C object CMakeFiles/sp_msgs__rosidl_generator_c.dir/rosidl_generator_c/sp_msgs/msg/detail/enemy_status_msg__functions.c.o\n'}
+[15.431004] (sp_msgs) StdoutLine: {'line': b'[ 13%] Building C object CMakeFiles/sp_msgs__rosidl_generator_c.dir/rosidl_generator_c/sp_msgs/msg/detail/enemy_status_msg__type_support.c.o\n'}
+[15.438132] (sp_msgs) StdoutLine: {'line': b'[ 15%] Building C object CMakeFiles/sp_msgs__rosidl_generator_c.dir/rosidl_generator_c/sp_msgs/msg/detail/autoaim_target_msg__description.c.o\n'}
+[15.443506] (sp_msgs) StdoutLine: {'line': b'[ 18%] Building C object CMakeFiles/sp_msgs__rosidl_generator_c.dir/rosidl_generator_c/sp_msgs/msg/detail/autoaim_target_msg__functions.c.o\n'}
+[15.449106] (sp_msgs) StdoutLine: {'line': b'[ 20%] Building C object CMakeFiles/sp_msgs__rosidl_generator_c.dir/rosidl_generator_c/sp_msgs/msg/detail/autoaim_target_msg__type_support.c.o\n'}
+[15.451143] (-) TimerEvent: {}
+[15.551531] (-) TimerEvent: {}
+[15.569033] (sp_msgs) StdoutLine: {'line': b'[ 22%] Linking C shared library libsp_msgs__rosidl_generator_c.so\n'}
+[15.651638] (-) TimerEvent: {}
+[15.751992] (-) TimerEvent: {}
+[15.778129] (sp_msgs) StdoutLine: {'line': b'[ 22%] Built target sp_msgs__rosidl_generator_c\n'}
+[15.852112] (-) TimerEvent: {}
+[15.858811] (sp_msgs) StdoutLine: {'line': b'[ 36%] Generating C type support dispatch for ROS interfaces\n'}
+[15.863529] (sp_msgs) StdoutLine: {'line': b'[ 36%] Generating C++ type support for eProsima Fast-RTPS\n'}
+[15.864552] (sp_msgs) StdoutLine: {'line': b'[ 36%] Generating C++ type support dispatch for ROS interfaces\n'}
+[15.865439] (sp_msgs) StdoutLine: {'line': b'[ 36%] Generating C introspection for ROS interfaces\n'}
+[15.865921] (sp_msgs) StdoutLine: {'line': b'[ 36%] Generating C++ introspection for ROS interfaces\n'}
+[15.866462] (sp_msgs) StdoutLine: {'line': b'[ 36%] Generating C type support for eProsima Fast-RTPS\n'}
+[15.952205] (-) TimerEvent: {}
+[16.054982] (-) TimerEvent: {}
+[16.155723] (-) TimerEvent: {}
+[16.227581] (sp_msgs) StdoutLine: {'line': b'[ 40%] Building CXX object CMakeFiles/sp_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/sp_msgs/msg/enemy_status_msg__type_support.cpp.o\n'}
+[16.230269] (sp_msgs) StdoutLine: {'line': b'[ 40%] Building CXX object CMakeFiles/sp_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/sp_msgs/msg/enemy_status_msg__type_support.cpp.o\n'}
+[16.237128] (sp_msgs) StdoutLine: {'line': b'[ 45%] Building CXX object CMakeFiles/sp_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/sp_msgs/msg/autoaim_target_msg__type_support.cpp.o\n'}
+[16.238876] (sp_msgs) StdoutLine: {'line': b'[ 45%] Building CXX object CMakeFiles/sp_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/sp_msgs/msg/autoaim_target_msg__type_support.cpp.o\n'}
+[16.255840] (-) TimerEvent: {}
+[16.317059] (sp_msgs) StdoutLine: {'line': b'[ 47%] Building C object CMakeFiles/sp_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/sp_msgs/msg/detail/enemy_status_msg__type_support.c.o\n'}
+[16.324754] (sp_msgs) StdoutLine: {'line': b'[ 52%] Building C object CMakeFiles/sp_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/sp_msgs/msg/detail/autoaim_target_msg__type_support.c.o\n'}
+[16.327145] (sp_msgs) StdoutLine: {'line': b'[ 52%] Building CXX object CMakeFiles/sp_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/sp_msgs/msg/detail/enemy_status_msg__type_support.cpp.o\n'}
+[16.337600] (sp_msgs) StdoutLine: {'line': b'[ 54%] Building CXX object CMakeFiles/sp_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/sp_msgs/msg/detail/autoaim_target_msg__type_support.cpp.o\n'}
+[16.351600] (sp_msgs) StdoutLine: {'line': b'[ 56%] Building CXX object CMakeFiles/sp_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/sp_msgs/msg/detail/dds_fastrtps/enemy_status_msg__type_support.cpp.o\n'}
+[16.355934] (-) TimerEvent: {}
+[16.360559] (sp_msgs) StdoutLine: {'line': b'[ 59%] Building CXX object CMakeFiles/sp_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/sp_msgs/msg/detail/dds_fastrtps/autoaim_target_msg__type_support.cpp.o\n'}
+[16.366002] (sp_msgs) StdoutLine: {'line': b'[ 61%] Building CXX object CMakeFiles/sp_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/sp_msgs/msg/detail/enemy_status_msg__type_support_c.cpp.o\n'}
+[16.371319] (sp_msgs) StdoutLine: {'line': b'[ 63%] Building CXX object CMakeFiles/sp_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/sp_msgs/msg/detail/autoaim_target_msg__type_support_c.cpp.o\n'}
+[16.456054] (-) TimerEvent: {}
+[16.464025] (sp_msgs) StdoutLine: {'line': b'[ 65%] Linking CXX shared library libsp_msgs__rosidl_typesupport_c.so\n'}
+[16.556216] (-) TimerEvent: {}
+[16.604914] (sp_msgs) StdoutLine: {'line': b'[ 68%] Linking C shared library libsp_msgs__rosidl_typesupport_introspection_c.so\n'}
+[16.651997] (sp_msgs) StdoutLine: {'line': b'[ 68%] Built target sp_msgs__rosidl_typesupport_c\n'}
+[16.656287] (-) TimerEvent: {}
+[16.756740] (-) TimerEvent: {}
+[16.772930] (sp_msgs) StdoutLine: {'line': b'[ 68%] Built target sp_msgs__rosidl_typesupport_introspection_c\n'}
+[16.856873] (-) TimerEvent: {}
+[16.957404] (-) TimerEvent: {}
+[17.020015] (sp_msgs) StdoutLine: {'line': b'[ 70%] Linking CXX shared library libsp_msgs__rosidl_typesupport_cpp.so\n'}
+[17.057522] (-) TimerEvent: {}
+[17.151115] (sp_msgs) StdoutLine: {'line': b'[ 70%] Built target sp_msgs__rosidl_typesupport_cpp\n'}
+[17.157640] (-) TimerEvent: {}
+[17.258259] (-) TimerEvent: {}
+[17.358855] (-) TimerEvent: {}
+[17.371074] (sp_msgs) StdoutLine: {'line': b'[ 72%] Linking CXX shared library libsp_msgs__rosidl_typesupport_fastrtps_c.so\n'}
+[17.388515] (sp_msgs) StdoutLine: {'line': b'[ 75%] Linking CXX shared library libsp_msgs__rosidl_typesupport_introspection_cpp.so\n'}
+[17.459048] (-) TimerEvent: {}
+[17.548393] (sp_msgs) StdoutLine: {'line': b'[ 75%] Built target sp_msgs__rosidl_typesupport_fastrtps_c\n'}
+[17.559191] (-) TimerEvent: {}
+[17.583945] (sp_msgs) StdoutLine: {'line': b'[ 77%] Linking CXX shared library libsp_msgs__rosidl_typesupport_fastrtps_cpp.so\n'}
+[17.584898] (sp_msgs) StdoutLine: {'line': b'[ 77%] Built target sp_msgs__rosidl_typesupport_introspection_cpp\n'}
+[17.659400] (-) TimerEvent: {}
+[17.759916] (-) TimerEvent: {}
+[17.830047] (sp_msgs) StdoutLine: {'line': b'[ 77%] Built target sp_msgs__rosidl_typesupport_fastrtps_cpp\n'}
+[17.860015] (-) TimerEvent: {}
+[17.897086] (sp_msgs) StdoutLine: {'line': b'[ 77%] Built target sp_msgs\n'}
+[17.960158] (-) TimerEvent: {}
+[18.076888] (-) TimerEvent: {}
+[18.113867] (sp_msgs) StdoutLine: {'line': b'[ 79%] Generating Python code for ROS interfaces\n'}
+[18.177029] (-) TimerEvent: {}
+[18.277579] (-) TimerEvent: {}
+[18.378392] (-) TimerEvent: {}
+[18.478896] (-) TimerEvent: {}
+[18.579364] (-) TimerEvent: {}
+[18.680165] (-) TimerEvent: {}
+[18.692723] (sp_msgs) StdoutLine: {'line': b'[ 79%] Built target sp_msgs__py\n'}
+[18.764473] (sp_msgs) StdoutLine: {'line': b'[ 81%] Building C object CMakeFiles/sp_msgs__rosidl_generator_py.dir/rosidl_generator_py/sp_msgs/msg/_enemy_status_msg_s.c.o\n'}
+[18.768279] (sp_msgs) StdoutLine: {'line': b'[ 84%] Building C object CMakeFiles/sp_msgs__rosidl_generator_py.dir/rosidl_generator_py/sp_msgs/msg/_autoaim_target_msg_s.c.o\n'}
+[18.780279] (-) TimerEvent: {}
+[18.880584] (-) TimerEvent: {}
+[18.981047] (-) TimerEvent: {}
+[19.081446] (-) TimerEvent: {}
+[19.181971] (-) TimerEvent: {}
+[19.238762] (sp_msgs) StdoutLine: {'line': b'[ 86%] Linking C shared library libsp_msgs__rosidl_generator_py.so\n'}
+[19.282123] (-) TimerEvent: {}
+[19.334769] (sp_msgs) StdoutLine: {'line': b'[ 86%] Built target sp_msgs__rosidl_generator_py\n'}
+[19.382325] (-) TimerEvent: {}
+[19.408228] (sp_msgs) StdoutLine: {'line': b'[ 93%] Building C object CMakeFiles/sp_msgs_s__rosidl_typesupport_c.dir/rosidl_generator_py/sp_msgs/_sp_msgs_s.ep.rosidl_typesupport_c.c.o\n'}
+[19.410110] (sp_msgs) StdoutLine: {'line': b'[ 93%] Building C object CMakeFiles/sp_msgs_s__rosidl_typesupport_fastrtps_c.dir/rosidl_generator_py/sp_msgs/_sp_msgs_s.ep.rosidl_typesupport_fastrtps_c.c.o\n'}
+[19.411155] (sp_msgs) StdoutLine: {'line': b'[ 93%] Building C object CMakeFiles/sp_msgs_s__rosidl_typesupport_introspection_c.dir/rosidl_generator_py/sp_msgs/_sp_msgs_s.ep.rosidl_typesupport_introspection_c.c.o\n'}
+[19.482447] (-) TimerEvent: {}
+[19.582943] (-) TimerEvent: {}
+[19.683277] (-) TimerEvent: {}
+[19.714424] (sp_msgs) StdoutLine: {'line': b'[ 95%] Linking C shared module rosidl_generator_py/sp_msgs/sp_msgs_s__rosidl_typesupport_c.so\n'}
+[19.783385] (-) TimerEvent: {}
+[19.788885] (sp_msgs) StdoutLine: {'line': b'[ 97%] Linking C shared module rosidl_generator_py/sp_msgs/sp_msgs_s__rosidl_typesupport_fastrtps_c.so\n'}
+[19.795570] (sp_msgs) StdoutLine: {'line': b'[100%] Linking C shared module rosidl_generator_py/sp_msgs/sp_msgs_s__rosidl_typesupport_introspection_c.so\n'}
+[19.829065] (sp_msgs) StdoutLine: {'line': b'[100%] Built target sp_msgs_s__rosidl_typesupport_c\n'}
+[19.883535] (-) TimerEvent: {}
+[19.940917] (sp_msgs) StdoutLine: {'line': b'[100%] Built target sp_msgs_s__rosidl_typesupport_fastrtps_c\n'}
+[19.983688] (-) TimerEvent: {}
+[20.005132] (sp_msgs) StdoutLine: {'line': b'[100%] Built target sp_msgs_s__rosidl_typesupport_introspection_c\n'}
+[20.083816] (-) TimerEvent: {}
+[20.166954] (sp_msgs) CommandEnded: {'returncode': 0}
+[20.183910] (-) TimerEvent: {}
+[20.190831] (sp_msgs) JobProgress: {'identifier': 'sp_msgs', 'progress': 'install'}
+[20.200972] (sp_msgs) Command: {'cmd': ['/usr/bin/cmake', '--install', '/app/sp_vision/ros2_ws/build/sp_msgs'], 'cwd': '/app/sp_vision/ros2_ws/build/sp_msgs', 'env': OrderedDict({'HOSTNAME': 'DESKTOP-Q7EV71U', 'OPENVINO_ROOT': '/opt/intel/openvino_latest', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/lib:/opt/spdlog/lib:/opt/fmt/lib:/opt/yaml-cpp/lib:/opt/opencv/lib:/opt/ceres/lib:/opt/intel/openvino_latest/runtime/lib/intel64', 'HOME': '/root', 'OLDPWD': '/app/sp_vision', 'ROS_PYTHON_VERSION': '3', 'LC_CTYPE': 'C.UTF-8', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'PKG_CONFIG_PATH': '/opt/spdlog/lib/pkgconfig:/opt/fmt/lib/pkgconfig:/opt/yaml-cpp/lib/pkgconfig:/opt/opencv/lib/pkgconfig:/opt/ceres/lib/pkgconfig', 'PATH': '/opt/ros/jazzy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'PWD': '/app/sp_vision/ros2_ws/build/sp_msgs', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'TZ': 'Asia/Shanghai', 'COLCON': '1', 'OpenVINO_DIR': '/opt/intel/openvino_latest/runtime/cmake', 'CMAKE_PREFIX_PATH': '/opt/spdlog:/opt/fmt:/opt/json:/opt/yaml-cpp:/opt/opencv:/opt/ceres:/opt/intel/openvino_latest/runtime/cmake:/usr/lib/cmake/openvino'}), 'shell': False}
+[20.212152] (sp_msgs) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[20.233512] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/ament_index/resource_index/rosidl_interfaces/sp_msgs\n'}
+[20.284054] (-) TimerEvent: {}
+[20.299283] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/msg/EnemyStatusMsg.json\n'}
+[20.351802] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/msg/AutoaimTargetMsg.json\n'}
+[20.384175] (-) TimerEvent: {}
+[20.388452] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs\n'}
+[20.402091] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg\n'}
+[20.422464] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/autoaim_target_msg.h\n'}
+[20.481245] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail\n'}
+[20.484278] (-) TimerEvent: {}
+[20.505394] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__description.c\n'}
+[20.584406] (-) TimerEvent: {}
+[20.606091] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__functions.c\n'}
+[20.684527] (-) TimerEvent: {}
+[20.704117] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__functions.h\n'}
+[20.764574] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__struct.h\n'}
+[20.784638] (-) TimerEvent: {}
+[20.852001] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__type_support.c\n'}
+[20.884787] (-) TimerEvent: {}
+[20.985783] (-) TimerEvent: {}
+[21.086272] (-) TimerEvent: {}
+[21.110106] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__type_support.h\n'}
+[21.186418] (-) TimerEvent: {}
+[21.200480] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__description.c\n'}
+[21.269186] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__functions.c\n'}
+[21.286537] (-) TimerEvent: {}
+[21.347352] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__functions.h\n'}
+[21.386648] (-) TimerEvent: {}
+[21.413981] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__struct.h\n'}
+[21.485392] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__type_support.c\n'}
+[21.486725] (-) TimerEvent: {}
+[21.552350] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__type_support.h\n'}
+[21.586886] (-) TimerEvent: {}
+[21.617179] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/enemy_status_msg.h\n'}
+[21.668967] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/rosidl_generator_c__visibility_control.h\n'}
+[21.686946] (-) TimerEvent: {}
+[21.735963] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/environment/library_path.sh\n'}
+[21.787094] (-) TimerEvent: {}
+[21.802027] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/environment/library_path.dsv\n'}
+[21.849822] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_generator_c.so\n'}
+[21.887218] (-) TimerEvent: {}
+[21.987667] (-) TimerEvent: {}
+[22.006272] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_generator_c.so" to ""\n'}
+[22.017531] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs\n'}
+[22.030862] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg\n'}
+[22.048668] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail\n'}
+[22.069677] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__rosidl_typesupport_fastrtps_c.h\n'}
+[22.087812] (-) TimerEvent: {}
+[22.148016] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__rosidl_typesupport_fastrtps_c.h\n'}
+[22.187962] (-) TimerEvent: {}
+[22.231021] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/rosidl_typesupport_fastrtps_c__visibility_control.h\n'}
+[22.288104] (-) TimerEvent: {}
+[22.294154] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_fastrtps_c.so\n'}
+[22.355722] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_fastrtps_c.so" to ""\n'}
+[22.367911] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs\n'}
+[22.386968] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg\n'}
+[22.388566] (-) TimerEvent: {}
+[22.412239] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail\n'}
+[22.435049] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__rosidl_typesupport_introspection_c.h\n'}
+[22.487096] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__type_support.c\n'}
+[22.488685] (-) TimerEvent: {}
+[22.512719] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__rosidl_typesupport_introspection_c.h\n'}
+[22.570783] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__type_support.c\n'}
+[22.582259] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/rosidl_typesupport_introspection_c__visibility_control.h\n'}
+[22.588777] (-) TimerEvent: {}
+[22.640643] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_introspection_c.so\n'}
+[22.688905] (-) TimerEvent: {}
+[22.689937] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_introspection_c.so" to ""\n'}
+[22.705300] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_c.so\n'}
+[22.782931] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_c.so" to ""\n'}
+[22.789006] (-) TimerEvent: {}
+[22.797471] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs\n'}
+[22.810231] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg\n'}
+[22.828721] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/autoaim_target_msg.hpp\n'}
+[22.889171] (-) TimerEvent: {}
+[22.951234] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail\n'}
+[22.984771] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__builder.hpp\n'}
+[22.989285] (-) TimerEvent: {}
+[23.069155] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__struct.hpp\n'}
+[23.089407] (-) TimerEvent: {}
+[23.171690] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__traits.hpp\n'}
+[23.189536] (-) TimerEvent: {}
+[23.276761] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__type_support.hpp\n'}
+[23.289660] (-) TimerEvent: {}
+[23.351436] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__builder.hpp\n'}
+[23.389787] (-) TimerEvent: {}
+[23.423195] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__struct.hpp\n'}
+[23.485823] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__traits.hpp\n'}
+[23.489861] (-) TimerEvent: {}
+[23.538288] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__type_support.hpp\n'}
+[23.589998] (-) TimerEvent: {}
+[23.602927] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/enemy_status_msg.hpp\n'}
+[23.670774] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/rosidl_generator_cpp__visibility_control.hpp\n'}
+[23.690133] (-) TimerEvent: {}
+[23.790653] (-) TimerEvent: {}
+[23.791142] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs\n'}
+[23.831168] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg\n'}
+[23.877864] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail\n'}
+[23.890767] (-) TimerEvent: {}
+[23.977054] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__rosidl_typesupport_fastrtps_cpp.hpp\n'}
+[23.990923] (-) TimerEvent: {}
+[24.061523] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/dds_fastrtps\n'}
+[24.091041] (-) TimerEvent: {}
+[24.092516] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__rosidl_typesupport_fastrtps_cpp.hpp\n'}
+[24.164088] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h\n'}
+[24.191171] (-) TimerEvent: {}
+[24.237300] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_fastrtps_cpp.so\n'}
+[24.288988] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_fastrtps_cpp.so" to ""\n'}
+[24.291282] (-) TimerEvent: {}
+[24.303553] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs\n'}
+[24.318554] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg\n'}
+[24.346504] (sp_msgs) StdoutLine: {'line': b'-- Up-to-date: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail\n'}
+[24.365343] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__rosidl_typesupport_introspection_cpp.hpp\n'}
+[24.391404] (-) TimerEvent: {}
+[24.420817] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/autoaim_target_msg__type_support.cpp\n'}
+[24.485670] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__rosidl_typesupport_introspection_cpp.hpp\n'}
+[24.491522] (-) TimerEvent: {}
+[24.594319] (-) TimerEvent: {}
+[24.654801] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/include/sp_msgs/sp_msgs/msg/detail/enemy_status_msg__type_support.cpp\n'}
+[24.694438] (-) TimerEvent: {}
+[24.729707] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_introspection_cpp.so\n'}
+[24.794549] (-) TimerEvent: {}
+[24.795914] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_introspection_cpp.so" to ""\n'}
+[24.811295] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_cpp.so\n'}
+[24.894666] (-) TimerEvent: {}
+[24.933175] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_typesupport_cpp.so" to ""\n'}
+[24.994815] (-) TimerEvent: {}
+[25.003530] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/environment/pythonpath.sh\n'}
+[25.045571] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/environment/pythonpath.dsv\n'}
+[25.094004] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs-0.0.1-py3.12.egg-info\n'}
+[25.094888] (-) TimerEvent: {}
+[25.119256] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs-0.0.1-py3.12.egg-info/dependency_links.txt\n'}
+[25.171217] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs-0.0.1-py3.12.egg-info/PKG-INFO\n'}
+[25.195014] (-) TimerEvent: {}
+[25.247902] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs-0.0.1-py3.12.egg-info/SOURCES.txt\n'}
+[25.295129] (-) TimerEvent: {}
+[25.337384] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs-0.0.1-py3.12.egg-info/top_level.txt\n'}
+[25.395255] (-) TimerEvent: {}
+[25.400321] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs\n'}
+[25.422871] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/msg\n'}
+[25.449229] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/msg/_autoaim_target_msg.py\n'}
+[25.495366] (-) TimerEvent: {}
+[25.517375] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/msg/_autoaim_target_msg_s.c\n'}
+[25.585861] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/msg/_enemy_status_msg.py\n'}
+[25.595469] (-) TimerEvent: {}
+[25.683267] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/msg/_enemy_status_msg_s.c\n'}
+[25.695595] (-) TimerEvent: {}
+[25.760482] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/msg/__init__.py\n'}
+[25.795731] (-) TimerEvent: {}
+[25.835165] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/sp_msgs_s__rosidl_typesupport_c.so\n'}
+[25.895855] (-) TimerEvent: {}
+[25.992068] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/sp_msgs_s__rosidl_typesupport_fastrtps_c.so\n'}
+[25.995934] (-) TimerEvent: {}
+[26.056192] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/sp_msgs_s__rosidl_typesupport_introspection_c.so\n'}
+[26.096060] (-) TimerEvent: {}
+[26.118878] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/_sp_msgs_s.ep.rosidl_typesupport_c.c\n'}
+[26.186784] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/_sp_msgs_s.ep.rosidl_typesupport_fastrtps_c.c\n'}
+[26.196151] (-) TimerEvent: {}
+[26.239746] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/_sp_msgs_s.ep.rosidl_typesupport_introspection_c.c\n'}
+[26.296278] (-) TimerEvent: {}
+[26.307242] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/__init__.py\n'}
+[26.396377] (-) TimerEvent: {}
+[26.496692] (-) TimerEvent: {}
+[26.596968] (-) TimerEvent: {}
+[26.622968] (sp_msgs) StdoutLine: {'line': b"Listing '/app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs'...\n"}
+[26.623473] (sp_msgs) StdoutLine: {'line': b"Compiling '/app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/__init__.py'...\n"}
+[26.623939] (sp_msgs) StdoutLine: {'line': b"Listing '/app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/msg'...\n"}
+[26.624885] (sp_msgs) StdoutLine: {'line': b"Compiling '/app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/msg/__init__.py'...\n"}
+[26.626654] (sp_msgs) StdoutLine: {'line': b"Compiling '/app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/msg/_autoaim_target_msg.py'...\n"}
+[26.627986] (sp_msgs) StdoutLine: {'line': b"Compiling '/app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/msg/_enemy_status_msg.py'...\n"}
+[26.687783] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/sp_msgs_s__rosidl_typesupport_fastrtps_c.so\n'}
+[26.697144] (-) TimerEvent: {}
+[26.796180] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/sp_msgs_s__rosidl_typesupport_fastrtps_c.so" to ""\n'}
+[26.797206] (-) TimerEvent: {}
+[26.848482] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/sp_msgs_s__rosidl_typesupport_introspection_c.so\n'}
+[26.897333] (-) TimerEvent: {}
+[26.998613] (-) TimerEvent: {}
+[27.032472] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/sp_msgs_s__rosidl_typesupport_introspection_c.so" to ""\n'}
+[27.078597] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/sp_msgs_s__rosidl_typesupport_c.so\n'}
+[27.098739] (-) TimerEvent: {}
+[27.191506] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/python3.12/site-packages/sp_msgs/sp_msgs_s__rosidl_typesupport_c.so" to ""\n'}
+[27.198859] (-) TimerEvent: {}
+[27.205890] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_generator_py.so\n'}
+[27.286189] (sp_msgs) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/app/sp_vision/ros2_ws/install/lib/libsp_msgs__rosidl_generator_py.so" to ""\n'}
+[27.299027] (-) TimerEvent: {}
+[27.306967] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/msg/EnemyStatusMsg.idl\n'}
+[27.372881] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/msg/AutoaimTargetMsg.idl\n'}
+[27.399144] (-) TimerEvent: {}
+[27.458332] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/msg/EnemyStatusMsg.msg\n'}
+[27.499261] (-) TimerEvent: {}
+[27.514468] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/msg/AutoaimTargetMsg.msg\n'}
+[27.593234] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/ament_index/resource_index/package_run_dependencies/sp_msgs\n'}
+[27.599367] (-) TimerEvent: {}
+[27.678603] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/ament_index/resource_index/parent_prefix_path/sp_msgs\n'}
+[27.699485] (-) TimerEvent: {}
+[27.736525] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/environment/ament_prefix_path.sh\n'}
+[27.799605] (-) TimerEvent: {}
+[27.809305] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/environment/ament_prefix_path.dsv\n'}
+[27.875730] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/environment/path.sh\n'}
+[27.899721] (-) TimerEvent: {}
+[28.000093] (-) TimerEvent: {}
+[28.087992] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/environment/path.dsv\n'}
+[28.100203] (-) TimerEvent: {}
+[28.124100] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/local_setup.bash\n'}
+[28.170091] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/local_setup.sh\n'}
+[28.200312] (-) TimerEvent: {}
+[28.215062] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/local_setup.zsh\n'}
+[28.269469] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/local_setup.dsv\n'}
+[28.300426] (-) TimerEvent: {}
+[28.314783] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/package.dsv\n'}
+[28.380535] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/ament_index/resource_index/packages/sp_msgs\n'}
+[28.400536] (-) TimerEvent: {}
+[28.448741] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/export_sp_msgs__rosidl_generator_cExport.cmake\n'}
+[28.500656] (-) TimerEvent: {}
+[28.505986] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/export_sp_msgs__rosidl_generator_cExport-noconfig.cmake\n'}
+[28.567875] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/export_sp_msgs__rosidl_typesupport_fastrtps_cExport.cmake\n'}
+[28.600841] (-) TimerEvent: {}
+[28.626734] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/export_sp_msgs__rosidl_typesupport_fastrtps_cExport-noconfig.cmake\n'}
+[28.688980] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/sp_msgs__rosidl_typesupport_introspection_cExport.cmake\n'}
+[28.701018] (-) TimerEvent: {}
+[28.747257] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/sp_msgs__rosidl_typesupport_introspection_cExport-noconfig.cmake\n'}
+[28.801131] (-) TimerEvent: {}
+[28.807377] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/sp_msgs__rosidl_typesupport_cExport.cmake\n'}
+[28.901280] (-) TimerEvent: {}
+[28.921903] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/sp_msgs__rosidl_typesupport_cExport-noconfig.cmake\n'}
+[28.996760] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/export_sp_msgs__rosidl_generator_cppExport.cmake\n'}
+[29.001409] (-) TimerEvent: {}
+[29.043834] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/export_sp_msgs__rosidl_typesupport_fastrtps_cppExport.cmake\n'}
+[29.101525] (-) TimerEvent: {}
+[29.142753] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/export_sp_msgs__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake\n'}
+[29.201649] (-) TimerEvent: {}
+[29.213111] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/sp_msgs__rosidl_typesupport_introspection_cppExport.cmake\n'}
+[29.271291] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/sp_msgs__rosidl_typesupport_introspection_cppExport-noconfig.cmake\n'}
+[29.301795] (-) TimerEvent: {}
+[29.334623] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/sp_msgs__rosidl_typesupport_cppExport.cmake\n'}
+[29.398815] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/sp_msgs__rosidl_typesupport_cppExport-noconfig.cmake\n'}
+[29.401882] (-) TimerEvent: {}
+[29.450422] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/export_sp_msgs__rosidl_generator_pyExport.cmake\n'}
+[29.502009] (-) TimerEvent: {}
+[29.538305] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/export_sp_msgs__rosidl_generator_pyExport-noconfig.cmake\n'}
+[29.598762] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/rosidl_cmake-extras.cmake\n'}
+[29.602119] (-) TimerEvent: {}
+[29.640506] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/ament_cmake_export_dependencies-extras.cmake\n'}
+[29.702250] (-) TimerEvent: {}
+[29.746781] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/ament_cmake_export_include_directories-extras.cmake\n'}
+[29.802383] (-) TimerEvent: {}
+[29.823117] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/ament_cmake_export_libraries-extras.cmake\n'}
+[29.902502] (-) TimerEvent: {}
+[29.950624] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/ament_cmake_export_targets-extras.cmake\n'}
+[30.002612] (-) TimerEvent: {}
+[30.044567] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake\n'}
+[30.101170] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake\n'}
+[30.102698] (-) TimerEvent: {}
+[30.155336] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/sp_msgsConfig.cmake\n'}
+[30.202342] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/cmake/sp_msgsConfig-version.cmake\n'}
+[30.202871] (-) TimerEvent: {}
+[30.272293] (sp_msgs) StdoutLine: {'line': b'-- Installing: /app/sp_vision/ros2_ws/install/share/sp_msgs/package.xml\n'}
+[30.302980] (-) TimerEvent: {}
+[30.319534] (sp_msgs) CommandEnded: {'returncode': 0}
+[30.403079] (-) TimerEvent: {}
+[30.503476] (-) TimerEvent: {}
+[30.604755] (-) TimerEvent: {}
+[30.705031] (-) TimerEvent: {}
+[30.805326] (-) TimerEvent: {}
+[30.905906] (-) TimerEvent: {}
+[31.011338] (-) TimerEvent: {}
+[31.035672] (sp_msgs) JobEnded: {'identifier': 'sp_msgs', 'rc': 0}
+[31.059133] (-) EventReactorShutdown: {}

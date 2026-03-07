@@ -1,0 +1,43 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from sp_msgs/msg/EnemyStatusMsg.msg
+// generated code does not contain a copyright notice
+
+#include "builtin_interfaces/msg/Time.idl"
+
+module sp_msgs {
+  module msg {
+    @verbatim (language="comment", text=
+      "上层下发敌方整体状态")
+    struct EnemyStatusMsg {
+      @verbatim (language="comment", text=
+        "消息生成时间")
+      builtin_interfaces::msg::Time timestamp;
+
+      @verbatim (language="comment", text=
+        "当前处于“无敌状态”的敌方 ID 列表" "\n"
+        "例如：[3, 4] 表示 3 号与 4 号暂时打不动")
+      sequence<int8> invincible_enemy_ids;
+
+      @verbatim (language="comment", text=
+        "===== 以下为可选扩展字段（可以根据需要删减或不用） =====" "\n"
+        "比赛阶段：0=未知, 1=准备, 2=对战中, 3=加时, 4=结束")
+      int8 game_stage;
+
+      @verbatim (language="comment", text=
+        "场上存活的敌方单位数量")
+      int8 enemy_count;
+
+      @verbatim (language="comment", text=
+        "是否允许开火：true=允许，false=禁止（比如裁判区等）")
+      boolean fire_allowed;
+
+      @verbatim (language="comment", text=
+        "敌方阵营/颜色：0=未知, 1=RED, 2=BLUE")
+      int8 enemy_team;
+
+      @verbatim (language="comment", text=
+        "上层认为当前存在的敌方 ID 列表（用于和视觉检测结果对比）")
+      sequence<int8> detected_enemy_ids;
+    };
+  };
+};

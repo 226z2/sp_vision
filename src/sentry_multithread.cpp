@@ -25,6 +25,7 @@
 #include "tools/math_tools.hpp"
 #include "tools/plotter.hpp"
 #include "tools/recorder.hpp"
+#include "src/referee_runtime.hpp"
 
 using namespace std::chrono;
 
@@ -78,7 +79,15 @@ int main(int argc, char * argv[])
 
     auto armors = yolo.detect(img);
 
-    decider.get_invincible_armor(ros2.subscribe_enemy_status());
+    const auto ref_io = cboard.referee();
+    const auto ref = referee_runtime::from_io(ref_io);
+    if (const auto color = referee_runtime::enemy_color(ref)) {
+      tracker.set_enemy_color(*color);
+      decider.set_enemy_color(*color);
+    } else {
+      tracker.reset_enemy_color();
+      decider.reset_enemy_color();
+    }
 
     decider.armor_filter(armors);
 
@@ -111,7 +120,7 @@ int main(int argc, char * argv[])
 
     /// 发射逻辑
     command.shoot = shooter.shoot(command, aimer, targets, gimbal_pos);
-    // command.shoot = false;
+    if (!referee_runtime::can_fire(ref)) command.shoot = false;
 
     cboard.send(command);
 
@@ -119,6 +128,62 @@ int main(int argc, char * argv[])
     Eigen::Vector4d target_info = decider.get_target_info(armors, targets);
 
     ros2.publish(target_info);
+
+    const auto state = cboard.state();
+    const auto enc = cboard.encoders();
+    const auto dev = cboard.device_status();
+    const auto tof = cboard.tof();
+    const auto ts = cboard.timesync();
+    sp_msgs::msg::Dm02SerialCopyMsg serial_copy{};
+    serial_copy.timestamp = rclcpp::Clock().now();
+    serial_copy.established = true;
+    serial_copy.have_state = true;
+    serial_copy.send_ok = 0;
+    serial_copy.send_fail = 0;
+
+    serial_copy.yaw_rad = state.yaw;
+    serial_copy.pitch_rad = state.pitch;
+    serial_copy.roll_rad = 0.0F;
+    serial_copy.enc_yaw = enc.yaw;
+    serial_copy.enc_pitch = enc.pitch;
+    serial_copy.yaw_vel_rad_s = state.yaw_vel;
+    serial_copy.pitch_vel_rad_s = state.pitch_vel;
+    serial_copy.bullet_speed_mps = state.bullet_speed;
+    serial_copy.bullet_count = state.bullet_count;
+    serial_copy.gimbal_mode = static_cast<int>(cboard.gimbal_mode());
+    serial_copy.shoot_state = dev.shoot_state;
+    serial_copy.shooter_heat = dev.shooter_heat;
+    serial_copy.shooter_heat_limit = dev.shooter_heat_limit;
+    serial_copy.projectile_allowance_17mm = dev.projectile_allowance_17mm;
+    serial_copy.projectile_allowance_42mm = dev.projectile_allowance_42mm;
+    serial_copy.state_device_ts_us = 0;
+    serial_copy.state_host_ts_ns = 0;
+
+    serial_copy.referee_valid = ref_io.valid;
+    serial_copy.referee_enemy_team = ref_io.enemy_team;
+    serial_copy.referee_fire_allowed = ref_io.fire_allowed;
+    serial_copy.referee_robot_id = ref_io.robot_id;
+    serial_copy.referee_game_stage = ref_io.game_stage;
+    serial_copy.referee_status = ref_io.status;
+    serial_copy.referee_device_ts_us = ref_io.device_ts_us;
+    serial_copy.referee_host_ts_ns = ref_io.host_ts_ns;
+
+    serial_copy.tof_valid = tof.valid;
+    serial_copy.tof_distance_cm = tof.distance_cm;
+    serial_copy.tof_strength = 0;
+    serial_copy.tof_temp_cdeg = 0;
+    serial_copy.tof_status = 0;
+    serial_copy.tof_device_ts_us = tof.device_ts_us;
+    serial_copy.tof_host_ts_ns = tof.host_ts_ns;
+
+    serial_copy.timesync_valid = ts.valid;
+    serial_copy.timesync_offset_us = ts.offset_us;
+    serial_copy.timesync_rtt_us = ts.rtt_us;
+    serial_copy.timesync_version = ts.version;
+    serial_copy.timesync_last_device_time_us = ts.last_device_time_us;
+    serial_copy.timesync_last_host_time_us = ts.last_host_time_us;
+
+    ros2.publish_serial_copy(serial_copy);
   }
 
   return 0;

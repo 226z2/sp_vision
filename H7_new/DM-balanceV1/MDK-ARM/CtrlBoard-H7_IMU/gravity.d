@@ -1,9 +1,0 @@
-ctrlboard-h7_imu\gravity.o: ..\User\Controller\GRAVITY.c
-ctrlboard-h7_imu\gravity.o: ..\User\Controller\GRAVITY.h
-ctrlboard-h7_imu\gravity.o: ../Drivers/CMSIS/DSP/Include/arm_math.h
-ctrlboard-h7_imu\gravity.o: ../Drivers/CMSIS/Include/cmsis_compiler.h
-ctrlboard-h7_imu\gravity.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
-ctrlboard-h7_imu\gravity.o: ../Drivers/CMSIS/Include/cmsis_armcc.h
-ctrlboard-h7_imu\gravity.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
-ctrlboard-h7_imu\gravity.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
-ctrlboard-h7_imu\gravity.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\float.h

@@ -8,7 +8,7 @@
 
 #include "serial/serial.h"
 
-#include "modules/communication/drivers/dm_02/dm_02.hpp"
+#include "io/dm02/impl/dm02_driver.hpp"
 #include "tools/logger.hpp"
 #include "tools/math_tools.hpp"
 #include "tools/yaml.hpp"
@@ -263,6 +263,23 @@ LinkImpl::LinkImpl(const std::string & config_path)
     timesync_.last_host_time_us = ts.last_host_time_us;
   };
 
+  cb.on_referee_status = [this](const communication::dm_02::RefereeStatus & rs) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    referee_.status = rs.status;
+    if (rs.status != 0) {
+      referee_.valid = (rs.status & 0x0001u) != 0;
+    } else {
+      /* Backward compatibility: old firmware has no status word. */
+      referee_.valid = true;
+    }
+    referee_.enemy_team = rs.enemy_team;
+    referee_.fire_allowed = (rs.fire_allowed != 0);
+    referee_.robot_id = rs.robot_id;
+    referee_.game_stage = rs.game_stage;
+    referee_.device_ts_us = rs.device_ts_us;
+    referee_.host_ts_ns = rs.host_ts_ns;
+  };
+
   impl_->driver.set_callbacks(std::move(cb));
 
   if (!open()) {
@@ -319,6 +336,10 @@ void LinkImpl::io_thread()
 {
   tools::logger()->info("[Dm02] io_thread started.");
   int error_count = 0;
+  auto last_ref_query_tp =
+    std::chrono::steady_clock::now() - std::chrono::milliseconds(1000);
+  constexpr auto kRefQueryPeriod = std::chrono::milliseconds(300);
+  constexpr std::uint64_t kRefStaleNs = 1000ULL * 1000ULL * 1000ULL;
 
   while (!quit_) {
     if (!impl_ || !impl_->driver.is_open()) {
@@ -328,6 +349,21 @@ void LinkImpl::io_thread()
 
     try {
       impl_->driver.step(5);
+      const auto now_tp = std::chrono::steady_clock::now();
+      if (now_tp - last_ref_query_tp >= kRefQueryPeriod && impl_->driver.established()) {
+        bool should_query = true;
+        {
+          std::lock_guard<std::mutex> lock(mutex_);
+          const auto now_ns = now_ns_steady();
+          if (referee_.host_ts_ns != 0 && (now_ns - referee_.host_ts_ns) < kRefStaleNs) {
+            should_query = false;
+          }
+        }
+        if (should_query) {
+          (void)impl_->driver.send_referee_query();
+          last_ref_query_tp = now_tp;
+        }
+      }
       error_count = 0;
     } catch (...) {
       ++error_count;
@@ -369,6 +405,12 @@ ToFStatus LinkImpl::tof() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return tof_;
+}
+
+RefereeStatus LinkImpl::referee() const
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  return referee_;
 }
 
 TimeSyncStatus LinkImpl::timesync() const
@@ -439,6 +481,36 @@ void LinkImpl::send(
   cmd.host_ts_ns = now_ns_steady();
 
   (void)impl_->driver.send_gimbal_delta(cmd);
+}
+
+void LinkImpl::send_fire(
+  bool fire_on, std::int32_t fire_mode, std::int32_t burst_count, std::uint16_t status)
+{
+  if (!impl_ || !impl_->driver.is_open()) return;
+
+  communication::dm_02::FireCommand cmd;
+  cmd.fire_on = fire_on ? 1 : 0;
+  cmd.fire_mode = fire_mode;
+  cmd.burst_count = burst_count;
+  cmd.status = status;
+  cmd.host_ts_ns = now_ns_steady();
+  (void)impl_->driver.send_fire_command(cmd);
+}
+
+void LinkImpl::send_chassis(
+  std::int32_t vx_mm_s, std::int32_t vy_mm_s, std::int32_t wz_mdeg_s, std::int32_t mode,
+  std::uint16_t status)
+{
+  if (!impl_ || !impl_->driver.is_open()) return;
+
+  communication::dm_02::ChassisCommand cmd;
+  cmd.vx_mm_s = vx_mm_s;
+  cmd.vy_mm_s = vy_mm_s;
+  cmd.wz_mdeg_s = wz_mdeg_s;
+  cmd.mode = mode;
+  cmd.status = status;
+  cmd.host_ts_ns = now_ns_steady();
+  (void)impl_->driver.send_chassis_command(cmd);
 }
 
 }  // namespace io::dm02::impl

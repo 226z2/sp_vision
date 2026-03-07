@@ -1,0 +1,60 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from sp_msgs/msg/AutoaimTargetMsg.msg
+// generated code does not contain a copyright notice
+
+#include "builtin_interfaces/msg/Time.idl"
+
+module sp_msgs {
+  module msg {
+    @verbatim (language="comment", text=
+      "上层下发自瞄目标信息")
+    struct AutoaimTargetMsg {
+      @verbatim (language="comment", text=
+        "消息生成时间")
+      builtin_interfaces::msg::Time timestamp;
+
+      @verbatim (language="comment", text=
+        "当前关注/候选目标 ID 列表，前面的优先级更高" "\n"
+        "例如：[5, 3, 1] 表示优先打 5 号，再是 3 号和 1 号")
+      sequence<int8> target_ids;
+
+      @verbatim (language="comment", text=
+        "===== 以下为可选扩展字段 =====" "\n"
+        "当前首要目标 ID" "\n"
+        "如果没有明确首要目标，可以设为 -1")
+      int8 main_target_id;
+
+      @verbatim (language="comment", text=
+        "是否当前有有效目标")
+      boolean has_target;
+
+      @verbatim (language="comment", text=
+        "期望云台大致朝向的水平角度（度）")
+      float yaw_deg;
+
+      @verbatim (language="comment", text=
+        "期望云台大致朝向的俯仰角（度）")
+      float pitch_deg;
+
+      @verbatim (language="comment", text=
+        "目标大致距离（米）")
+      float distance_m;
+
+      @verbatim (language="comment", text=
+        "目标在机器人坐标系下的速度估计（米/秒）")
+      float vx;
+
+      float vy;
+
+      float vz;
+
+      @verbatim (language="comment", text=
+        "上层对当前目标集合的“信心”，范围 0.0 ~ 1.0")
+      float confidence;
+
+      @verbatim (language="comment", text=
+        "射击指令：0=不干预, 1=建议开火, 2=禁止开火")
+      uint8 shoot_command;
+    };
+  };
+};

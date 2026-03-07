@@ -18,6 +18,7 @@
 #include "tools/math_tools.hpp"
 #include "tools/plotter.hpp"
 #include "tools/thread_safe_queue.hpp"
+#include "src/referee_runtime.hpp"
 
 using namespace std::chrono_literals;
 
@@ -57,6 +58,10 @@ int main(int argc, char * argv[])
       auto target = target_queue.front();
       auto gs = gimbal.state();
       auto plan = planner.plan(target, gs.bullet_speed);
+
+      if (!referee_runtime::can_fire(referee_runtime::from_io(gimbal.referee()))) {
+        plan.fire = false;
+      }
 
       gimbal.send(
         plan.control, plan.fire, plan.yaw, plan.yaw_vel, plan.yaw_acc, plan.pitch, plan.pitch_vel,
@@ -113,6 +118,11 @@ int main(int argc, char * argv[])
 
     solver.set_R_gimbal2world(q);
     auto armors = yolo.detect(img);
+    const auto ref = referee_runtime::from_io(gimbal.referee());
+    if (const auto color = referee_runtime::enemy_color(ref))
+      tracker.set_enemy_color(*color);
+    else
+      tracker.reset_enemy_color();
     auto targets = tracker.track(armors, t);
     if (!targets.empty())
       target_queue.push(targets.front());
@@ -136,10 +146,14 @@ int main(int argc, char * argv[])
       tools::draw_points(img, image_points, {0, 0, 255});
     }
 
+#if defined(SPV_PLOTTER_BACKEND_FOXGLOVE)
+    plotter.plot_image(img, "reprojection");
+#else
     cv::resize(img, img, {}, 0.5, 0.5);  // 显示时缩小图片尺寸
     cv::imshow("reprojection", img);
     auto key = cv::waitKey(1);
     if (key == 'q') break;
+#endif
   }
 
   quit = true;

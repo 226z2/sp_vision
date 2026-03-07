@@ -29,8 +29,12 @@ public:
     const std::vector<omniperception::DetectionResult> & detection_queue, std::list<Armor> & armors,
     std::chrono::steady_clock::time_point t, bool use_enemy_color = true);
 
+  void set_enemy_color(Color color);
+  void reset_enemy_color();
+
 private:
   Solver & solver_;
+  Color default_enemy_color_;
   Color enemy_color_;
   int min_detect_count_;
   int max_temp_lost_count_;

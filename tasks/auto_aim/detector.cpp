@@ -4,12 +4,23 @@
 #include <yaml-cpp/yaml.h>
 
 #include <filesystem>
+#include <string_view>
 
 #include "tools/img_tools.hpp"
 #include "tools/logger.hpp"
+#include "tools/plotter.hpp"
 
 namespace auto_aim
 {
+namespace
+{
+void publish_debug_image(const cv::Mat & image, std::string_view frame_id)
+{
+  static tools::Plotter plotter;
+  plotter.plot_image(image, frame_id);
+}
+}  // namespace
+
 Detector::Detector(const std::string & config_path, bool debug)
 : classifier_(config_path), debug_(debug)
 {
@@ -39,7 +50,7 @@ std::list<Armor> Detector::detect(const cv::Mat & bgr_img, int frame_count)
   // 进行二值化
   cv::Mat binary_img;
   cv::threshold(gray_img, binary_img, threshold_, 255, cv::THRESH_BINARY);
-  cv::imshow("binary_img", binary_img);
+  publish_debug_image(binary_img, "detector/binary");
 
   // 获取轮廓点
   std::vector<std::vector<cv::Point>> contours;
@@ -379,8 +390,8 @@ void Detector::show_result(
   cv::resize(binary_img, binary_img2, {}, 0.5, 0.5);  // 显示时缩小图片尺寸
   cv::resize(detection, detection, {}, 0.5, 0.5);     // 显示时缩小图片尺寸
 
-  // cv::imshow("threshold", binary_img2);
-  cv::imshow("detection", detection);
+  publish_debug_image(binary_img2, "detector/threshold");
+  publish_debug_image(detection, "detector/detection");
 }
 
 void Detector::lightbar_points_corrector(Lightbar & lightbar, const cv::Mat & gray_img) const

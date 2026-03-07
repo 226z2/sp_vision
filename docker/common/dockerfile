@@ -1,0 +1,412 @@
+# ---------------------------------------- #
+#
+#   
+# 
+# ---------------------------------------- #
+
+# ---------- Step 0：参数定义 ----------
+ARG PARALLEL_JOBS=2
+ARG OPENCV_VERSION=4.11.0
+ARG PYTHON_VERSION=3.12
+ARG OPENVINO_VERSION=2025.3.0
+ARG UBUNTU_IMAGE=ubuntu:22.04
+ARG INTEL_APT_SCHEME=https
+
+# ---------- Step 1：构建环境 ----------
+# build-base：只包含低频的系统/编译工具链依赖（不要在这里安装业务 Python 依赖）
+FROM ${UBUNTU_IMAGE} AS build-base
+
+# 设置非交互式安装模式，避免在构建过程中出现交互提示
+ARG DEBIAN_FRONTEND=noninteractive
+ARG PARALLEL_JOBS
+ARG CMAKE_VERSION=3.29.3
+
+ENV http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" no_proxy="" NO_PROXY=""
+
+RUN set -eux; \
+    rm -f /etc/apt/apt.conf.d/*proxy* || true; \
+    [ -f /etc/apt/apt.conf ] && sed -i '/Acquire::http::Proxy/d;/Acquire::https::Proxy/d' /etc/apt/apt.conf || true
+
+# 设置时区为上海
+ENV TZ=Asia/Shanghai
+ENV MAKEFLAGS=-j${PARALLEL_JOBS}
+
+# ---------- Step 2：基础环境和依赖安装 ----------
+RUN set -eux; \
+    # 1. 将默认源替换为阿里云镜像（HTTP 避免证书问题）
+    sed -i 's|http://archive.ubuntu.com/ubuntu/|http://mirrors.aliyun.com/ubuntu/|g' /etc/apt/sources.list; \
+    sed -i 's|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' /etc/apt/sources.list; \
+    # 2. 更新索引后安装仓库管理所需工具
+    apt-get update; \
+    apt-get install -y --no-install-recommends ca-certificates software-properties-common wget gnupg; \
+    # 3. 启用 universe 仓库并添加 Python PPA
+    add-apt-repository universe; \
+    add-apt-repository ppa:deadsnakes/ppa -y; \
+    # 4. 更新所有新配置的源
+    apt-get update; \
+    # 5. 安装所有依赖
+    apt-get install -y --no-install-recommends \
+        build-essential cmake ninja-build pkg-config git curl autoconf automake libtool \
+        rustc cargo \
+        python3.12 python3.12-venv python3.12-dev \
+        libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libffi-dev liblzma-dev \
+        libzmq3-dev libeigen3-dev libavcodec-dev libavformat-dev libavutil-dev \
+        libswscale-dev libswresample-dev libjpeg-dev libpng-dev libtiff-dev libwebp-dev \
+        libopenjp2-7-dev libgl1-mesa-glx libgtk-3-dev libx11-6 libgstreamer1.0-dev \
+        libgstreamer-plugins-base1.0-dev libv4l-dev libxvidcore-dev libx264-dev libx265-dev \
+        libatlas-base-dev gfortran liblapack-dev libopenblas-dev libtbb-dev \
+        ffmpeg net-tools \
+    && rm -rf /var/lib/apt/lists/* && \
+    curl -sSL https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh -o cmake-install.sh && \
+    chmod +x cmake-install.sh && \
+    ./cmake-install.sh --skip-license --prefix=/usr/local && \
+    rm cmake-install.sh
+
+# ----------------------------------------------------
+#               多阶段构建 - Python 环境
+# ----------------------------------------------------
+# py-base：仅包含构建 OpenCV Python bindings 所需的最小 Python 依赖（低频）
+FROM build-base AS py-base
+ENV VENV_PATH=/opt/venv
+ENV PATH=${VENV_PATH}/bin:$PATH
+RUN python3.12 -m venv ${VENV_PATH} && \
+    pip install --no-cache-dir --upgrade pip -i https://mirrors.aliyun.com/pypi/simple && \
+    pip install --no-cache-dir numpy pybind11 -i https://mirrors.aliyun.com/pypi/simple
+
+FROM build-base AS spdlog-builder
+ARG PARALLEL_JOBS
+COPY .cache/spdlog /tmp/spdlog
+RUN cd /tmp/spdlog && mkdir -p build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/spdlog -DSPDLOG_BUILD_SHARED=ON -DSPDLOG_BUILD_TESTS=OFF -DSPDLOG_BUILD_EXAMPLE=OFF && \
+    make -j${PARALLEL_JOBS} && make install && ldconfig
+
+FROM build-base AS json-builder
+ARG PARALLEL_JOBS
+COPY .cache/json /tmp/json
+RUN cd /tmp/json && mkdir -p build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/json -DJSON_BuildTests=OFF -DJSON_Install=ON && \
+    make -j${PARALLEL_JOBS} && make install
+
+FROM build-base AS yaml-cpp-builder
+ARG PARALLEL_JOBS
+COPY .cache/yaml-cpp /tmp/yaml-cpp
+RUN cd /tmp/yaml-cpp && mkdir -p build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/yaml-cpp -DYAML_BUILD_SHARED_LIBS=ON -DYAML_CPP_BUILD_TESTS=OFF -DYAML_CPP_BUILD_TOOLS=OFF && \
+    make -j${PARALLEL_JOBS} && make install && ldconfig
+
+FROM build-base AS asio-builder
+COPY .cache/asio /tmp/asio
+ARG PARALLEL_JOBS
+RUN cd /tmp/asio/asio && \
+    bash ./autogen.sh && \
+    ./configure --prefix=/opt/asio && \
+    make -j${PARALLEL_JOBS} && \
+    make install && \
+    ldconfig
+
+FROM build-base AS websocketpp-builder
+COPY .cache/websocketpp /tmp/websocketpp
+RUN cd /tmp/websocketpp && mkdir -p build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/websocketpp -DWEBSOCKETPP_BUILD_TESTS=OFF -DWEBSOCKETPP_BUILD_EXAMPLES=OFF && \
+    make -j${PARALLEL_JOBS} && make install
+
+# ---------- ① 构建 Abseil ----------
+FROM build-base AS abseil-cpp-builder
+ARG PARALLEL_JOBS
+COPY .cache/abseil-cpp /tmp/abseil-cpp
+RUN cd /tmp/abseil-cpp && mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/abseil-cpp \
+        -DABSL_PROPAGATE_CXX_STD=ON \
+        -DABSL_BUILD_TESTING=OFF \
+        -DABSL_BUILD_EXAMPLES=OFF \
+        -DBUILD_SHARED_LIBS=ON \ 
+        -DBUILD_STATIC_LIBS=OFF \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    && make -j${PARALLEL_JOBS} && make install && ldconfig
+
+##########################
+# ② build protobuf
+##########################
+FROM build-base AS protobuf-builder
+ARG PARALLEL_JOBS
+COPY .cache/protobuf /tmp/protobuf
+COPY --from=abseil-cpp-builder /opt/abseil-cpp /opt/abseil-cpp
+ENV CMAKE_PREFIX_PATH=/opt/abseil-cpp
+RUN cd /tmp/protobuf && mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/protobuf \
+        -Dprotobuf_ABSL_PROVIDER=package \
+        -Dabsl_DIR=/opt/abseil-cpp/lib/cmake/absl \
+        -Dprotobuf_USE_EXTERNAL_ABSL=ON \
+        -Dprotobuf_BUILD_SHARED_LIBS=ON \
+        -Dprotobuf_BUILD_PROTOC_BINARIES=ON \
+        -Dprotobuf_BUILD_LIBPROTOC=ON \
+        -Dprotobuf_BUILD_TESTS=OFF \
+        -Dprotobuf_BUILD_EXAMPLES=OFF \
+    && make -j${PARALLEL_JOBS} && make install && ldconfig
+
+FROM build-base AS flatbuffers-builder
+ARG PARALLEL_JOBS
+COPY .cache/flatbuffers /tmp/flatbuffers
+RUN cd /tmp/flatbuffers && mkdir -p build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/flatbuffers \
+        -DFLATBUFFERS_BUILD_TESTS=OFF -DFLATBUFFERS_BUILD_EXAMPLES=OFF -DFLATBUFFERS_BUILD_FLATC=ON \
+        -DFLATBUFFERS_BUILD_SHAREDLIB=ON -DFLATBUFFERS_BUILD_STATICLIB=OFF && \
+    make -j${PARALLEL_JOBS} && make install && ldconfig
+
+FROM build-base AS osqp-builder
+ARG PARALLEL_JOBS
+COPY .cache/osqp /tmp/osqp
+RUN cd /tmp/osqp && mkdir -p build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/osqp \
+        -DOSQP_BUILD_SHARED_LIB=ON \
+        -DOSQP_BUILD_STATIC_LIB=OFF \
+        -DOSQP_BUILD_DEMO_EXE=OFF \
+        -DOSQP_BUILD_UNITTESTS=OFF \
+    && make -j${PARALLEL_JOBS} && make install && ldconfig
+
+FROM build-base AS qpoases-builder
+ARG PARALLEL_JOBS
+COPY .cache/qpoases /tmp/qpoases
+RUN cd /tmp/qpoases && mkdir -p build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/qpoases \
+        -DBUILD_SHARED_LIBS=ON \
+        -DQPOASES_BUILD_EXAMPLES=OFF \
+    && make -j${PARALLEL_JOBS} && make install && ldconfig
+
+FROM py-base AS opencv-builder
+ARG PARALLEL_JOBS
+ARG OPENCV_VERSION
+COPY .cache/opencv /tmp/opencv
+COPY .cache/opencv_contrib /tmp/opencv_contrib
+RUN cd /tmp/opencv && mkdir -p build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/opencv \
+        -DOPENCV_EXTRA_MODULES_PATH=/tmp/opencv_contrib/modules \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_STATIC_LIBS=OFF \
+        -DWITH_CUDA=OFF -DWITH_CUDNN=OFF -DWITH_TBB=ON -DWITH_OPENMP=ON -DWITH_IPP=OFF \
+        -DWITH_FFMPEG=ON -DWITH_GSTREAMER=ON -DWITH_V4L=ON -DWITH_LIBV4L=ON \
+        -DWITH_GTK=ON -DWITH_QT=OFF -DWITH_JPEG=ON -DWITH_PNG=ON -DWITH_TIFF=ON \
+        -DWITH_WEBP=ON -DWITH_OPENJPEG=ON -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF \
+        -DBUILD_EXAMPLES=OFF -DINSTALL_PYTHON_EXAMPLES=OFF -DBUILD_opencv_python3=ON \
+        -DPYTHON3_EXECUTABLE=${VENV_PATH}/bin/python \
+        -DPYTHON3_INCLUDE_DIR=$(${VENV_PATH}/bin/python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())") \
+        -DPYTHON3_PACKAGES_PATH=${VENV_PATH}/lib/python3.12/site-packages \
+        -DPYTHON3_NUMPY_INCLUDE_DIRS=$(${VENV_PATH}/bin/python -c "import numpy; print(numpy.get_include())") && \
+    make -j${PARALLEL_JOBS} && make install && ldconfig
+RUN ${VENV_PATH}/bin/python -c "import cv2; print(f'OpenCV version: {cv2.__version__}')"
+
+# py-deps：高频 Python 依赖（只依赖 requirements.txt 变化，不应触发重编 OpenCV/其他 C++ 依赖）
+FROM opencv-builder AS py-deps
+ENV VENV_PATH=/opt/venv
+ENV PATH=${VENV_PATH}/bin:$PATH
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt -i https://mirrors.aliyun.com/pypi/simple && \
+    ${VENV_PATH}/bin/python -c "import yaml, jinja2"
+
+#               Stage 3: Common Runtime Base
+# ----------------------------------------------------
+# This new stage will contain all shared runtime components
+# for both production and development environments.
+FROM ${UBUNTU_IMAGE} AS runtime-base
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG PYTHON_VERSION=3.12
+ENV TZ=Asia/Shanghai
+
+# NOTE: We deliberately avoid adding PPAs in runtime stages (key import often fails in restricted networks).
+# Instead, we copy the Python runtime from the build stage (same Ubuntu/glibc baseline) to keep ABI consistent.
+RUN set -eux; \
+    # Use HTTP mirror to bootstrap CA certificates reliably in restricted/mitm networks.
+    sed -i 's|http://archive.ubuntu.com/ubuntu/|http://mirrors.aliyun.com/ubuntu/|g' /etc/apt/sources.list; \
+    sed -i 's|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' /etc/apt/sources.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        # Python runtime deps (since we don't apt-install python3.12 here)
+        libssl3 zlib1g libbz2-1.0 libffi8 liblzma5 libsqlite3-0 libreadline8 \
+        # Project runtime deps
+        libzmq5 ffmpeg \
+        libavcodec58 libavformat58 libavutil56 libswscale5 libgomp1 libglib2.0-0 \
+        libgtk-3-0 libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libv4l-0 \
+        libjpeg8 libpng16-16 libtiff5 libwebp7 libopenjp2-7 libatlas3-base \
+        liblapack3 libopenblas0 libtbb2 \
+        net-tools vim htop \
+    ; \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy CPython 3.12 runtime from build stage (same distro baseline).
+COPY --from=build-base /usr/bin/python3.12 /usr/bin/python3.12
+COPY --from=build-base /usr/lib/python3.12 /usr/lib/python3.12
+COPY --from=build-base /usr/lib/x86_64-linux-gnu/libpython3.12.so* /usr/lib/x86_64-linux-gnu/
+
+COPY --from=py-deps /opt/venv /opt/venv
+COPY --from=spdlog-builder /opt/spdlog /opt/spdlog  
+COPY --from=json-builder /opt/json /opt/json
+COPY --from=yaml-cpp-builder /opt/yaml-cpp /opt/yaml-cpp
+COPY --from=opencv-builder /opt/opencv /opt/opencv
+COPY --from=asio-builder /opt/asio /opt/asio
+COPY --from=websocketpp-builder /opt/websocketpp /opt/websocketpp
+COPY --from=protobuf-builder /opt/protobuf /opt/protobuf
+COPY --from=flatbuffers-builder /opt/flatbuffers /opt/flatbuffers
+COPY --from=abseil-cpp-builder /opt/abseil-cpp /opt/abseil-cpp
+COPY --from=osqp-builder /opt/osqp /opt/osqp
+COPY --from=qpoases-builder /opt/qpoases /opt/qpoases
+
+ENV PATH=/opt/venv/bin:$PATH
+
+ENV LD_LIBRARY_PATH=/opt/spdlog/lib:\
+/opt/yaml-cpp/lib:\
+/opt/opencv/lib:\
+/opt/asio/lib:\
+/opt/websocketpp/lib:\
+/opt/protobuf/lib:\
+/opt/flatbuffers/lib:\
+/opt/abseil-cpp/lib:\
+/opt/osqp/lib:\
+/opt/qpoases/lib:\
+/usr/local/lib:/usr/lib/x86_64-linux-gnu
+
+ENV PKG_CONFIG_PATH=/opt/spdlog/lib/pkgconfig:\
+/opt/yaml-cpp/lib/pkgconfig:\
+/opt/opencv/lib/pkgconfig:\
+/opt/asio/lib/pkgconfig:\
+/opt/websocketpp/lib/pkgconfig:\
+/opt/protobuf/lib/pkgconfig:\
+/opt/flatbuffers/lib/pkgconfig:\
+/opt/abseil-cpp/lib/pkgconfig:/usr/local/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig
+
+ENV CMAKE_PREFIX_PATH=/opt/spdlog:\
+/opt/json:\
+/opt/yaml-cpp:\
+/opt/opencv:\
+/opt/asio:\
+/opt/websocketpp:\
+/opt/protobuf:\
+/opt/flatbuffers:\
+/opt/abseil-cpp:\
+/opt/osqp:\
+/opt/qpoases:\
+/usr/local
+
+RUN ldconfig
+
+
+# ----------------------------------------------------
+#               Stage 4: Final Runtime Environments
+# ----------------------------------------------------
+
+# Minimal runtime (prod): toolchain + libs, no dev/debug extras.
+FROM runtime-base AS runtime-prod
+
+WORKDIR /app
+EXPOSE 8765
+ENTRYPOINT ["/bin/bash"]
+
+# Development runtime: includes compiler/debuggers + OpenVINO tooling.
+FROM runtime-base AS runtime-dev
+
+ARG OPENVINO_VERSION
+ARG INTEL_APT_SCHEME=https
+
+# Install only the additional development-specific packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential cmake ninja-build pkg-config git curl autoconf automake libtool \
+        rustc cargo \
+        wget gnupg \
+        libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libffi-dev liblzma-dev \
+        libzmq3-dev libeigen3-dev libavcodec-dev libavformat-dev libavutil-dev \
+        libswscale-dev libswresample-dev libjpeg-dev libpng-dev libtiff-dev libwebp-dev \
+        libopenjp2-7-dev libgl1-mesa-glx libgtk-3-dev libx11-6 libgstreamer1.0-dev \
+        libgstreamer-plugins-base1.0-dev libv4l-dev libxvidcore-dev libx264-dev libx265-dev \
+        libatlas-base-dev gfortran liblapack-dev libopenblas-dev libtbb-dev libboost-all-dev \
+        libsuitesparse-dev libceres-dev \
+        libfftw3-dev libgsl-dev libnlopt-dev \
+        libmlpack-dev libdlib-dev \
+        clang lldb lld gdb gdbserver linux-tools-common linux-tools-generic \
+        usbutils pciutils strace ltrace valgrind \
+    && rm -rf /var/lib/apt/lists/* && \
+    # Compat: older build dirs may have hardcoded /usr/local/bin/cmake in CMakeCache/Makefiles.
+    # Ensure that path exists and points to the distro cmake.
+    mkdir -p /usr/local/bin && \
+    ln -sf /usr/bin/cmake /usr/local/bin/cmake && \
+    ln -sf /usr/bin/ctest /usr/local/bin/ctest && \
+    ln -sf /usr/bin/cpack /usr/local/bin/cpack
+
+# Copy Python 3.12 development files from build stage (keeps runtime-dev usable for building Python extensions)
+COPY --from=build-base /usr/include/python3.12 /usr/include/python3.12
+COPY --from=build-base /usr/bin/python3.12-config /usr/bin/python3.12-config
+COPY --from=build-base /usr/lib/python3.12/config-3.12-x86_64-linux-gnu /usr/lib/python3.12/config-3.12-x86_64-linux-gnu
+COPY --from=build-base /usr/lib/x86_64-linux-gnu/pkgconfig/python-3.12*.pc /usr/lib/x86_64-linux-gnu/pkgconfig/
+
+# Configure Intel OpenVINO repository and install runtime
+RUN set -eux; \
+    for i in 1 2 3 4 5; do \
+        wget -O /tmp/openvino.pub ${INTEL_APT_SCHEME:-https}://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && break; \
+        echo "retry openvino key fetch ($i)"; \
+        sleep 2; \
+    done; \
+    test -s /tmp/openvino.pub; \
+    gpg --dearmor -o /tmp/openvino.pub.gpg /tmp/openvino.pub; \
+    install -m 644 /tmp/openvino.pub.gpg /usr/share/keyrings/intel-openvino-archive-keyring.gpg; \
+    echo "deb [signed-by=/usr/share/keyrings/intel-openvino-archive-keyring.gpg] ${INTEL_APT_SCHEME:-https}://apt.repos.intel.com/openvino ubuntu22 main" \
+      > /etc/apt/sources.list.d/intel-openvino.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends openvino-${OPENVINO_VERSION}; \
+    rm -f /tmp/openvino.pub /tmp/openvino.pub.gpg; \
+    rm -rf /var/lib/apt/lists/*
+
+# Configure Intel GPU repository and install iGPU runtimes (OpenCL + Level Zero + media)
+#
+# NOTE: This step is best-effort. In some restricted/mitm networks, the key fetch returns HTML or is blocked,
+# which makes `gpg --dearmor` fail with "no valid OpenPGP data found". We skip GPU runtime installation then.
+ARG ENABLE_INTEL_GPU_RUNTIME=1
+RUN set -eux; \
+    if [ "${ENABLE_INTEL_GPU_RUNTIME}" != "1" ]; then \
+        echo "Intel GPU runtime disabled (ENABLE_INTEL_GPU_RUNTIME=${ENABLE_INTEL_GPU_RUNTIME})"; \
+        exit 0; \
+    fi; \
+    for i in 1 2 3 4 5; do \
+        wget -O /tmp/intel-graphics.key ${INTEL_APT_SCHEME}://repositories.intel.com/gpu/intel-graphics.key && break; \
+        echo "retry intel gpu key fetch ($i)"; \
+        sleep 2; \
+    done; \
+    test -s /tmp/intel-graphics.key; \
+    gpg --dearmor -o /usr/share/keyrings/intel-graphics.gpg /tmp/intel-graphics.key; \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] ${INTEL_APT_SCHEME}://repositories.intel.com/gpu/ubuntu jammy unified" \
+        > /etc/apt/sources.list.d/intel-gpu-jammy.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        intel-opencl-icd \
+        libze-intel-gpu1 libze1 \
+        intel-media-va-driver-non-free \
+        va-driver-all vainfo clinfo; \
+    rm -rf /var/lib/apt/lists/* /tmp/intel-graphics.key
+
+
+# Install OpenVINO Python wheel inside virtual environment
+RUN set -eux; \
+    if ! /opt/venv/bin/pip install --no-cache-dir openvino==${OPENVINO_VERSION}; then \
+        echo "Falling back to latest OpenVINO Python wheel."; \
+        /opt/venv/bin/pip install --no-cache-dir openvino; \
+    fi
+
+ENV OPENVINO_INSTALL_DIR=/usr/lib/openvino-${OPENVINO_VERSION}
+ENV LD_LIBRARY_PATH=/usr/lib/openvino-${OPENVINO_VERSION}:/opt/spdlog/lib:/opt/yaml-cpp/lib:/opt/opencv/lib:/opt/asio/lib:/opt/websocketpp/lib:/opt/protobuf/lib:/opt/flatbuffers/lib:/opt/abseil-cpp/lib:/opt/osqp/lib:/opt/qpoases/lib:/usr/local/lib:/usr/lib/x86_64-linux-gnu
+ENV PKG_CONFIG_PATH=/opt/spdlog/lib/pkgconfig:/opt/yaml-cpp/lib/pkgconfig:/opt/opencv/lib/pkgconfig:/opt/asio/lib/pkgconfig:/opt/websocketpp/lib/pkgconfig:/opt/protobuf/lib/pkgconfig:/opt/flatbuffers/lib/pkgconfig:/opt/abseil-cpp/lib/pkgconfig:/usr/local/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig
+ENV CMAKE_PREFIX_PATH=/usr/lib/cmake/openvino${OPENVINO_VERSION}:/opt/spdlog:/opt/json:/opt/yaml-cpp:/opt/opencv:/opt/asio:/opt/websocketpp:/opt/protobuf:/opt/flatbuffers:/opt/abseil-cpp:/opt/osqp:/opt/qpoases:/usr/local
+ENV PYTHONPATH=/opt/venv/lib/python3.12/site-packages
+
+WORKDIR /app
+EXPOSE 8765
+ENTRYPOINT ["/bin/bash"]

@@ -1,0 +1,6 @@
+msg/AutoaimTargetMsg.idl
+msg/AutoaimTargetMsg.msg
+msg/Dm02SerialCopyMsg.idl
+msg/Dm02SerialCopyMsg.msg
+msg/EnemyStatusMsg.idl
+msg/EnemyStatusMsg.msg

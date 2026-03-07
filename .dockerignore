@@ -1,0 +1,8 @@
+build
+build/
+build_*
+data
+records
+records_*
+logs
+.git

@@ -33,6 +33,7 @@ public:
   GimbalEncoders encoders() const;
   DeviceStatus device_status() const;
   ToFStatus tof() const;
+  RefereeStatus referee() const;
   TimeSyncStatus timesync() const;
 
   std::optional<std::uint64_t> device_us_to_host_us(std::uint64_t device_ts_us) const;
@@ -44,6 +45,11 @@ public:
   void send(
     bool control, bool target_valid, float yaw, float yaw_vel, float yaw_acc, float pitch,
     float pitch_vel, float pitch_acc);
+  void send_fire(
+    bool fire_on, std::int32_t fire_mode, std::int32_t burst_count, std::uint16_t status);
+  void send_chassis(
+    std::int32_t vx_mm_s, std::int32_t vy_mm_s, std::int32_t wz_mdeg_s, std::int32_t mode,
+    std::uint16_t status);
 
 private:
   void io_thread();
@@ -64,6 +70,7 @@ private:
   GimbalEncoders encoders_{};
   DeviceStatus device_status_{};
   ToFStatus tof_{};
+  RefereeStatus referee_{};
   TimeSyncStatus timesync_{};
 
   std::atomic<uint16_t> bullet_count_{0};

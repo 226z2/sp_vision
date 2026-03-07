@@ -5,7 +5,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "io/camera.hpp"
-#include "io/dm02_board.hpp"
+#include "io/dm02/dm02.hpp"
 #include "tools/img_tools.hpp"
 #include "tools/logger.hpp"
 #include "tools/math_tools.hpp"
@@ -28,7 +28,7 @@ void capture_loop(
   const std::string & config_path, const std::string & can, const std::string & output_folder)
 {
   (void)can;
-  io::Dm02Board cboard(config_path);
+  io::Dm02 cboard(config_path);
   io::Camera camera(config_path);
   cv::Mat img;
   std::chrono::steady_clock::time_point timestamp;

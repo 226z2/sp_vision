@@ -7,6 +7,7 @@
 #include <atomic>
 #include <chrono>
 #include <csignal>
+#include <cstdlib>
 #include <cstdint>
 #include <cmath>
 #include <iostream>
@@ -14,7 +15,7 @@
 #include <string>
 #include <thread>
 
-#include "third_party/Communication/modules/communication/communication.hpp"
+#include "io/dm02/impl/dm02_driver.hpp"
 
 #if defined(_WIN32)
 int main() {
@@ -22,7 +23,7 @@ int main() {
     return 1;
 }
 #else
-#include "third_party/Communication/modules/communication/drivers/dm_02/serial_transport_posix.hpp"
+#include "io/dm02/impl/serial_transport_posix.hpp"
 
 namespace {
 std::atomic<bool> g_stop{false};

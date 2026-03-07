@@ -19,7 +19,7 @@ ROS_CACHE_DIR   ?= $(CACHE_DIR)/ros
 # 默认共享宿主网络（WSL2 mirrored / 原生 Linux）
 # NAT 模式：将 USE_HOST_NET=no 并在 FORWARD_PORTS 中列出需要映射的端口
 USE_HOST_NET    ?= yes
-FORWARD_PORTS   ?= 4000 4002 9877
+FORWARD_PORTS   ?= 4000 4002 9877 8765
 
 PARALLEL_JOBS   ?= $(shell nproc)
 
@@ -38,6 +38,8 @@ GIMBAL_DEV_CONT ?= /dev/gimbal
 
 # 是否启用 GPU 直通
 ENABLE_GPU      ?= 0
+# 是否在镜像构建阶段安装 OpenVINO GPU runtime（默认跟随 ENABLE_GPU）
+ENABLE_GPU_RUNTIME ?= $(ENABLE_GPU)
 GPU_FLAGS       :=
 ifeq ($(ENABLE_GPU),1)
 GPU_FLAGS := -v /dev/dri:/dev/dri
@@ -62,10 +64,6 @@ REPOSITORIES := \
 # 说明：
 # - ROS 相关的 ament_package wheel 等离线资源，请放在 $(ROS_CACHE_DIR) 下，
 #   Dockerfile 会在构建时从该目录中安装 ament_package（仅使用本地文件，不访问网络）。
-
-# HikRobot SDK：下载后缓存到 .cache/vendor（完全离线）
-SDK_URL       := https://www.hikrobotics.com/cn2/source/vision/video/2024/12/23/MvCamCtrlSDK_STD_V4.5.0_241128.zip
-SDK_DEB_FILE  := MvCamCtrlSDK_Runtime-4.5.0_x86_64_20241128.deb
 
 # ------------------------------
 # 仓库自动规则
@@ -93,21 +91,21 @@ endef
 
 $(foreach repo,$(REPO_NAMES),$(eval $(call CLONE_TEMPLATE,$(repo))))
 
-.PHONY: all build build-dev build-prod build-type download download-sdk clone-repos force-download \
+.PHONY: all build build-dev build-prod build-type download clone-repos force-download \
 	run run-gui bash daemon stop clean clean-cache clean-all info check-deps
 
 all: build-dev
 
 build: build-dev
 
-build-dev: download
+build-dev:
 	@echo "$(BLUE)--> Building dev image $(IMAGE_NAME):$(TAG)$(RESET)"
 	@env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u no_proxy -u NO_PROXY \
 	 docker build \
 		$(NETWORK_FLAG) \
 		--build-arg PARALLEL_JOBS=$(PARALLEL_JOBS) \
 		--build-arg OPENVINO_APT_YEAR=2024 \
-		--build-arg ALLOW_NET_FOR_VENDOR=0 \
+		--build-arg ENABLE_GPU_RUNTIME=$(ENABLE_GPU_RUNTIME) \
 		--target runtime-dev \
 		-t $(IMAGE_NAME):$(TAG) .
 
@@ -118,7 +116,7 @@ build-prod: download
 		$(NETWORK_FLAG) \
 		--build-arg PARALLEL_JOBS=$(PARALLEL_JOBS) \
 		--build-arg OPENVINO_APT_YEAR=2024 \
-		--build-arg ALLOW_NET_FOR_VENDOR=0 \
+		--build-arg ENABLE_GPU_RUNTIME=$(ENABLE_GPU_RUNTIME) \
 		--target runtime-prod \
 		-t $(IMAGE_NAME):prod .
 
@@ -129,22 +127,9 @@ download: $(CACHE_DIR)/.download_complete
 
 $(CACHE_DIR)/.download_complete: makefile | $(CACHE_DIR)
 	@echo "$(MAGENTA)--> Downloading all offline deps into .cache ...$(RESET)"
-	@$(MAKE) download-sdk clone-repos
+	@$(MAKE) clone-repos
 	@echo "$(GREEN)✓ Offline deps ready$(RESET)"
 	@touch $@
-
-download-sdk: $(CACHE_DIR)/vendor/$(SDK_DEB_FILE)
-
-$(CACHE_DIR)/vendor/$(SDK_DEB_FILE): | $(CACHE_DIR)
-	@mkdir -p $(CACHE_DIR)/vendor
-	@if [ ! -f $@ ]; then \
-		echo "$(MAGENTA)--> Downloading HikRobot SDK package...$(RESET)"; \
-		wget -q --timeout=30 --tries=3 -O $(CACHE_DIR)/vendor/hikrobot_sdk.zip "$(SDK_URL)" && \
-		unzip -j -o $(CACHE_DIR)/vendor/hikrobot_sdk.zip "*$(SDK_DEB_FILE)" -d $(CACHE_DIR)/vendor/ && \
-		rm -f $(CACHE_DIR)/vendor/hikrobot_sdk.zip; \
-	else \
-		echo "$(GREEN)Hik SDK deb found: $@$(RESET)"; \
-	fi
 
 clone-repos: $(REPO_TARGETS)
 
@@ -288,3 +273,271 @@ check-deps:
 	@command -v docker >/dev/null 2>&1 && echo "$(GREEN)✓ docker$(RESET)" || echo "$(RED)✗ docker$(RESET)"
 	@command -v git >/dev/null 2>&1 && echo "$(GREEN)✓ git$(RESET)" || echo "$(RED)✗ git$(RESET)"
 	@command -v wget >/dev/null 2>&1 && echo "$(GREEN)✓ wget$(RESET)" || echo "$(RED)✗ wget$(RESET)"
+
+# ------------------------------
+# spv: 容器内构建/运行快捷命令
+# ------------------------------
+SPV_BUILD_DIR      ?= build
+SPV_BUILD_TYPE     ?= Release
+SPV_CMAKE_ARGS     ?=
+SPV_ROS_WS         ?= /app/sp_vision/ros2_ws
+SPV_ROS_PACKAGES   ?= sp_msgs
+SPV_ROS_AUTO_INSTALL_COLCON ?= 1
+SPV_RUN_TARGET     ?=
+SPV_RUN_ARGS       ?=
+SPV_CMD            ?=
+CMD                ?=
+SPV_FOXGLOVE_PORT  ?= 8765
+SPV_DAEMON_NAME    ?= $(CONTAINER_NAME)_svc
+SPV_CMD_REAL       := $(if $(strip $(SPV_CMD)),$(SPV_CMD),$(CMD))
+SPV_COMPONENTS     ?= auto
+SPV_AUTO_SYNC_COMPONENT_DEPS ?= 1
+SPV_FLATBUFFERS_VERSION ?= v24.3.25
+SPV_FLATC_VERSION ?= v24.3.25
+SPV_FLATC_ASSET ?= Linux.flatc.binary.g++-13.zip
+SPV_KILL_PORT ?= $(SPV_FOXGLOVE_PORT)
+SPV_KILL_BEFORE_RUN ?= 0
+
+define DOCKER_RUN_SPV
+docker run --rm \
+	$(NETWORK_FLAG) \
+	$(PORT_FLAGS) \
+	$(DOCKER_PRIVILEGED_FLAGS) \
+	-v /dev/bus/usb:/dev/bus/usb \
+	$(GPU_FLAGS) \
+	--device=$(GIMBAL_DEV_HOST):$(GIMBAL_DEV_CONT) \
+	-e SPV_FOXGLOVE_PORT=$(SPV_FOXGLOVE_PORT) \
+	-v $(CURDIR):/app/sp_vision \
+	-v $(DATA_DIR):/app/data \
+	-w /app/sp_vision \
+	--entrypoint /bin/bash \
+	$(IMAGE_NAME):$(TAG)
+endef
+
+.PHONY: spv-config spv-build spv-rebuild spv-build-with-ros spv-run spv-cmd spv-ros-init spv-ros-build spv-ros-rebuild spv-daemon-up spv-daemon-down spv-daemon-shell spv-ros-daemon-start spv-ros-daemon-stop spv-ros-daemon-status spv-sync-deps spv-kill-port spv-kill-foxglove-port spv-help
+
+spv-sync-deps:
+	@set -e; \
+	if [ "$(SPV_AUTO_SYNC_COMPONENT_DEPS)" != "1" ]; then \
+		exit 0; \
+	fi; \
+	want_foxglove=0; \
+	case ",$(SPV_COMPONENTS)," in \
+		*,all,*|*,foxglove,*) want_foxglove=1 ;; \
+	esac; \
+	if [ "$(SPV_COMPONENTS)" = "auto" ]; then \
+		case " $(SPV_CMAKE_ARGS) " in \
+			*" -DSPV_ENABLE_FOXGLOVE=ON "*|*" -DSPV_PLOTTER_BACKEND=foxglove "*) want_foxglove=1 ;; \
+		esac; \
+	fi; \
+	if [ "$$want_foxglove" = "1" ]; then \
+		echo "$(BLUE)--> Sync component deps: foxglove$(RESET)"; \
+		[ -f 3rdparty/flatbuffers/include/flatbuffers/flatbuffers.h ] || \
+			bash tools/foxglove/download_flatbuffers_headers.sh $(SPV_FLATBUFFERS_VERSION); \
+		[ -x tools/bin/flatc/linux-x86_64/flatc ] || \
+			bash tools/foxglove/download_flatc.sh $(SPV_FLATC_VERSION) $(SPV_FLATC_ASSET); \
+		[ -f 3rdparty/asio/asio/include/asio.hpp ] || \
+			bash tools/foxglove/download_asio_headers.sh asio-1-31-0; \
+		[ -f 3rdparty/websocketpp/websocketpp/config/asio_no_tls.hpp ] || \
+			bash tools/foxglove/download_websocketpp_headers.sh 0.8.2; \
+	fi
+
+spv-config: ensure-dirs spv-sync-deps
+	@$(DOCKER_RUN_SPV) -lc 'set -eo pipefail; \
+		source /opt/ros/jazzy/setup.bash; \
+		if [ -f /app/sp_vision/ros2_ws/install/setup.bash ]; then source /app/sp_vision/ros2_ws/install/setup.bash; fi; \
+		cmake -S . -B $(SPV_BUILD_DIR) -DCMAKE_BUILD_TYPE=$(SPV_BUILD_TYPE) $(SPV_CMAKE_ARGS)'
+
+spv-build: ensure-dirs spv-sync-deps
+	@$(DOCKER_RUN_SPV) -lc 'set -eo pipefail; \
+		source /opt/ros/jazzy/setup.bash; \
+		if [ -f /app/sp_vision/ros2_ws/install/setup.bash ]; then source /app/sp_vision/ros2_ws/install/setup.bash; fi; \
+		cmake -S . -B $(SPV_BUILD_DIR) -DCMAKE_BUILD_TYPE=$(SPV_BUILD_TYPE) $(SPV_CMAKE_ARGS); \
+		cmake --build $(SPV_BUILD_DIR) -j $(PARALLEL_JOBS)'
+
+spv-rebuild: ensure-dirs spv-sync-deps
+	@$(DOCKER_RUN_SPV) -lc 'set -eo pipefail; \
+		rm -rf $(SPV_BUILD_DIR); \
+		source /opt/ros/jazzy/setup.bash; \
+		if [ -f /app/sp_vision/ros2_ws/install/setup.bash ]; then source /app/sp_vision/ros2_ws/install/setup.bash; fi; \
+		cmake -S . -B $(SPV_BUILD_DIR) -DCMAKE_BUILD_TYPE=$(SPV_BUILD_TYPE) $(SPV_CMAKE_ARGS); \
+		cmake --build $(SPV_BUILD_DIR) -j $(PARALLEL_JOBS)'
+
+spv-run: ensure-dirs
+	@if [ "$(SPV_KILL_BEFORE_RUN)" = "1" ]; then \
+		$(MAKE) --no-print-directory spv-kill-port SPV_KILL_PORT=$(SPV_FOXGLOVE_PORT); \
+	fi
+	@if [ -z "$(SPV_RUN_TARGET)" ]; then \
+		echo "$(RED)Error: specify SPV_RUN_TARGET=<binary or path>$(RESET)"; \
+		echo "$(YELLOW)Example: make $@ SPV_RUN_TARGET=camera_detect_test SPV_RUN_ARGS='--config-path configs/standard3.yaml'$(RESET)"; \
+		exit 1; \
+	fi
+	@$(DOCKER_RUN_SPV) -lc 'set -eo pipefail; \
+		source /opt/ros/jazzy/setup.bash; \
+		if [ -f /app/sp_vision/ros2_ws/install/setup.bash ]; then source /app/sp_vision/ros2_ws/install/setup.bash; fi; \
+		cd /app/sp_vision; \
+		t="$(SPV_RUN_TARGET)"; \
+		if [ -x "$$t" ]; then exec "$$t" $(SPV_RUN_ARGS); fi; \
+		if [ -x "./$$t" ]; then exec "./$$t" $(SPV_RUN_ARGS); fi; \
+		if [ -x "$(SPV_BUILD_DIR)/$$t" ]; then exec "$(SPV_BUILD_DIR)/$$t" $(SPV_RUN_ARGS); fi; \
+		if [ -x "$(SPV_BUILD_DIR)/bin/$$t" ]; then exec "$(SPV_BUILD_DIR)/bin/$$t" $(SPV_RUN_ARGS); fi; \
+		echo "target not found: $$t"; \
+		exit 1'
+
+spv-cmd: ensure-dirs
+	@if [ -z "$(SPV_CMD_REAL)" ]; then \
+		echo "$(RED)Error: specify SPV_CMD=\"...\" or CMD=\"...\"$(RESET)"; \
+		echo "$(YELLOW)Example: make $@ SPV_CMD='ls -la build'$(RESET)"; \
+		echo "$(YELLOW)Example: make $@ CMD='ls -la build'$(RESET)"; \
+		exit 1; \
+	fi
+	@$(DOCKER_RUN_SPV) -lc 'set -eo pipefail; $(SPV_CMD_REAL)'
+
+spv-kill-port:
+	@echo "$(YELLOW)--> Killing TCP listeners on port $(SPV_KILL_PORT)$(RESET)"
+	@set -e; \
+	killed_any=0; \
+	if command -v docker >/dev/null 2>&1; then \
+		conflicts="$$(docker ps --filter publish=$(SPV_KILL_PORT) --format '{{.ID}} {{.Names}}' 2>/dev/null || true)"; \
+		if [ -n "$$conflicts" ]; then \
+			echo "$(YELLOW)--> Stopping docker containers publishing $(SPV_KILL_PORT)$(RESET)"; \
+			echo "$$conflicts" | while read -r cid cname; do \
+				[ -n "$$cid" ] || continue; \
+				docker stop "$$cid" >/dev/null 2>&1 || true; \
+				echo "$(GREEN)✓ Stopped container $$cname ($$cid)$(RESET)"; \
+			done; \
+			killed_any=1; \
+		fi; \
+	fi; \
+	if command -v fuser >/dev/null 2>&1; then \
+		if fuser -n tcp $(SPV_KILL_PORT) >/dev/null 2>&1; then \
+			fuser -k $(SPV_KILL_PORT)/tcp >/dev/null 2>&1 || true; \
+			echo "$(GREEN)✓ Killed host listeners on $(SPV_KILL_PORT)$(RESET)"; \
+			killed_any=1; \
+		fi; \
+	else \
+		echo "$(RED)fuser not found; install psmisc or kill manually$(RESET)"; \
+		exit 2; \
+	fi; \
+	if [ "$$killed_any" = "0" ]; then \
+		echo "$(BLUE)No listener on $(SPV_KILL_PORT)$(RESET)"; \
+	fi
+
+spv-kill-foxglove-port: spv-kill-port
+
+spv-ros-build: ensure-dirs
+	@$(DOCKER_RUN_SPV) -lc 'set -eo pipefail; \
+		source /opt/ros/jazzy/setup.bash; \
+		if [ "$(SPV_ROS_AUTO_INSTALL_COLCON)" = "1" ] && ! command -v colcon >/dev/null 2>&1; then \
+			apt-get update; \
+			apt-get install -y --no-install-recommends python3-colcon-common-extensions; \
+		fi; \
+		if ! command -v colcon >/dev/null 2>&1; then \
+			echo "colcon not found; set SPV_ROS_AUTO_INSTALL_COLCON=1 or install colcon in image"; \
+			exit 2; \
+		fi; \
+		if [ -d $(SPV_ROS_WS)/src ]; then \
+			cd $(SPV_ROS_WS); \
+			colcon build --merge-install --symlink-install --packages-up-to $(SPV_ROS_PACKAGES); \
+			echo "ROS workspace built: $(SPV_ROS_WS)/install"; \
+		else \
+			echo "ROS workspace src not found: $(SPV_ROS_WS)/src"; \
+			exit 2; \
+		fi'
+
+spv-ros-init: spv-ros-build
+
+spv-ros-rebuild: ensure-dirs
+	@$(DOCKER_RUN_SPV) -lc 'set -eo pipefail; \
+		source /opt/ros/jazzy/setup.bash; \
+		if [ "$(SPV_ROS_AUTO_INSTALL_COLCON)" = "1" ] && ! command -v colcon >/dev/null 2>&1; then \
+			apt-get update; \
+			apt-get install -y --no-install-recommends python3-colcon-common-extensions; \
+		fi; \
+		if ! command -v colcon >/dev/null 2>&1; then \
+			echo "colcon not found; set SPV_ROS_AUTO_INSTALL_COLCON=1 or install colcon in image"; \
+			exit 2; \
+		fi; \
+		if [ -d $(SPV_ROS_WS)/src ]; then \
+			rm -rf $(SPV_ROS_WS)/build $(SPV_ROS_WS)/install $(SPV_ROS_WS)/log; \
+			cd $(SPV_ROS_WS); \
+			colcon build --merge-install --symlink-install --packages-up-to $(SPV_ROS_PACKAGES); \
+			echo "ROS workspace rebuilt: $(SPV_ROS_WS)/install"; \
+		else \
+			echo "ROS workspace src not found: $(SPV_ROS_WS)/src"; \
+			exit 2; \
+		fi'
+
+spv-build-with-ros: ensure-dirs spv-sync-deps
+	@$(DOCKER_RUN_SPV) -lc 'set -eo pipefail; \
+		source /opt/ros/jazzy/setup.bash; \
+		if [ "$(SPV_ROS_AUTO_INSTALL_COLCON)" = "1" ] && ! command -v colcon >/dev/null 2>&1; then \
+			apt-get update; \
+			apt-get install -y --no-install-recommends python3-colcon-common-extensions; \
+		fi; \
+		if ! command -v colcon >/dev/null 2>&1; then \
+			echo "colcon not found; set SPV_ROS_AUTO_INSTALL_COLCON=1 or install colcon in image"; \
+			exit 2; \
+		fi; \
+		if [ -d $(SPV_ROS_WS)/src ]; then \
+			cd $(SPV_ROS_WS); \
+			colcon build --merge-install --symlink-install --packages-up-to $(SPV_ROS_PACKAGES); \
+			source $(SPV_ROS_WS)/install/setup.bash; \
+		else \
+			echo "ROS workspace src not found: $(SPV_ROS_WS)/src"; \
+			exit 2; \
+		fi; \
+		cd /app/sp_vision; \
+		cmake -S . -B $(SPV_BUILD_DIR) -DCMAKE_BUILD_TYPE=$(SPV_BUILD_TYPE) $(SPV_CMAKE_ARGS); \
+		cmake --build $(SPV_BUILD_DIR) -j $(PARALLEL_JOBS)'
+
+spv-daemon-up: ensure-dirs
+	@docker rm -f $(SPV_DAEMON_NAME) >/dev/null 2>&1 || true
+	@docker run -d \
+		$(NETWORK_FLAG) \
+		$(PORT_FLAGS) \
+		$(DOCKER_PRIVILEGED_FLAGS) \
+		-v /dev/bus/usb:/dev/bus/usb \
+		$(GPU_FLAGS) \
+		--device=$(GIMBAL_DEV_HOST):$(GIMBAL_DEV_CONT) \
+		-v $(CURDIR):/app/sp_vision \
+		-v $(DATA_DIR):/app/data \
+		-w /app/sp_vision \
+		--entrypoint /bin/bash \
+		--name $(SPV_DAEMON_NAME) \
+		$(IMAGE_NAME):$(TAG) -lc 'trap : TERM INT; sleep infinity & wait'
+	@echo "$(GREEN)daemon up: $(SPV_DAEMON_NAME)$(RESET)"
+
+spv-daemon-down:
+	@docker rm -f $(SPV_DAEMON_NAME) >/dev/null 2>&1 || true
+	@echo "$(YELLOW)daemon down: $(SPV_DAEMON_NAME)$(RESET)"
+
+spv-daemon-shell:
+	@docker exec -it $(SPV_DAEMON_NAME) /bin/bash
+
+spv-ros-daemon-start:
+	@docker exec $(SPV_DAEMON_NAME) /bin/bash -lc 'source /opt/ros/jazzy/setup.bash; ros2 daemon start'
+
+spv-ros-daemon-stop:
+	@docker exec $(SPV_DAEMON_NAME) /bin/bash -lc 'source /opt/ros/jazzy/setup.bash; ros2 daemon stop'
+
+spv-ros-daemon-status:
+	@docker exec $(SPV_DAEMON_NAME) /bin/bash -lc 'source /opt/ros/jazzy/setup.bash; ros2 daemon status'
+
+spv-help:
+	@echo "spv-config      : container cmake configure"
+	@echo "spv-build       : container cmake configure+build"
+	@echo "spv-rebuild     : clean build dir and rebuild in container"
+	@echo "spv-build-with-ros : build ROS workspace first, then build main project"
+	@echo "spv-run         : run built target in container (SPV_RUN_TARGET=...)"
+	@echo "spv-cmd         : run custom command in container (SPV_CMD=...)"
+	@echo "spv-ros-build   : build ROS workspace packages (SPV_ROS_PACKAGES=...)"
+	@echo "spv-ros-rebuild : clean and rebuild ROS workspace"
+	@echo "spv-ros-init    : alias of spv-ros-build"
+	@echo "spv-daemon-up   : start long-running dev container"
+	@echo "spv-daemon-down : stop long-running dev container"
+	@echo "spv-daemon-shell: shell into long-running dev container"
+	@echo "spv-ros-daemon-start|stop|status : control ros2 daemon inside spv daemon"
+	@echo "spv-sync-deps   : sync optional component deps (SPV_COMPONENTS=auto|foxglove|all)"
+	@echo "spv-kill-port   : kill listener on TCP port (SPV_KILL_PORT=..., default SPV_FOXGLOVE_PORT)"
+	@echo "spv-kill-foxglove-port : alias of spv-kill-port"

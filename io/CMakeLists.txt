@@ -11,6 +11,11 @@ add_library(io STATIC
     camera.cpp
     dm02/dm02.cpp
     dm02/impl/link_impl.cpp
+    dm02/impl/dm02_driver.cpp
+    dm02/impl/platform_posix.cpp
+    dm02/protocol/core/CRC8_CRC16.c
+    dm02/protocol/core/comm.c
+    dm02/protocol/core/uproto.c
 )
 
 # hikrobot
@@ -23,7 +28,7 @@ else()
   message(FATAL_ERROR "Unsupported architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}!")
 endif()
 
-target_link_libraries(io PUBLIC MvCameraControl usb-1.0 yaml-cpp serial Holon::communication::drivers Threads::Threads)
+target_link_libraries(io PUBLIC MvCameraControl usb-1.0 yaml-cpp serial Threads::Threads)
 
 ################## 检查 ROS 环境 ##################
 find_package(ament_cmake QUIET)

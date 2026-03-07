@@ -19,10 +19,15 @@ Decider::Decider(const std::string & config_path) : detector_(config_path), coun
   fov_v_ = yaml["fov_v"].as<double>();
   new_fov_h_ = yaml["new_fov_h"].as<double>();
   new_fov_v_ = yaml["new_fov_v"].as<double>();
-  enemy_color_ =
+  default_enemy_color_ =
     (yaml["enemy_color"].as<std::string>() == "red") ? auto_aim::Color::red : auto_aim::Color::blue;
+  enemy_color_ = default_enemy_color_;
   mode_ = yaml["mode"].as<double>();
 }
+
+void Decider::set_enemy_color(auto_aim::Color color) { enemy_color_ = color; }
+
+void Decider::reset_enemy_color() { enemy_color_ = default_enemy_color_; }
 
 io::Command Decider::decide(
   auto_aim::YOLO & yolo, const Eigen::Vector3d & gimbal_pos, io::USBCamera & usbcam1,

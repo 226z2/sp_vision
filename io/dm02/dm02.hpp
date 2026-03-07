@@ -49,6 +49,18 @@ struct ToFStatus
   std::uint64_t host_ts_ns{0};
 };
 
+struct RefereeStatus
+{
+  bool valid{false};
+  std::uint16_t status{0};
+  std::int32_t enemy_team{0};
+  bool fire_allowed{false};
+  std::int32_t robot_id{0};
+  std::int32_t game_stage{0};
+  std::uint64_t device_ts_us{0};
+  std::uint64_t host_ts_ns{0};
+};
+
 class Dm02
 {
 public:
@@ -70,7 +82,7 @@ public:
 
   void send(Command command);
   void send(
-    bool control, bool target_valid, float yaw, float yaw_vel, float yaw_acc, float pitch,
+    bool control, bool fire, float yaw, float yaw_vel, float yaw_acc, float pitch,
     float pitch_vel, float pitch_acc);
 
   GimbalMode gimbal_mode() const;
@@ -78,9 +90,17 @@ public:
   GimbalEncoders encoders() const;
   DeviceStatus device_status() const;
   ToFStatus tof() const;
+  RefereeStatus referee() const;
   TimeSyncStatus timesync() const;
   std::optional<std::uint64_t> device_us_to_host_us(std::uint64_t device_ts_us) const;
   std::string str(GimbalMode mode) const;
+
+  void send_fire(
+    bool fire_on, std::int32_t fire_mode = 0, std::int32_t burst_count = 0,
+    std::uint16_t status = 0);
+  void send_chassis(
+    std::int32_t vx_mm_s, std::int32_t vy_mm_s, std::int32_t wz_mdeg_s, std::int32_t mode = 0,
+    std::uint16_t status = 0);
 
 private:
   struct Impl;

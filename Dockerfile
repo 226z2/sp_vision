@@ -2,10 +2,9 @@
 
 # 说明：
 # - 仅围绕 CMakeLists.txt 中的依赖做离线构建：
-#   OpenCV / fmt / Eigen3 / spdlog / yaml-cpp / nlohmann_json / OpenVINO / HikRobot SDK
+#   OpenCV / fmt / Eigen3 / spdlog / yaml-cpp / nlohmann_json / OpenVINO
 # - 其余调试工具只用系统包或 Python 包，不做额外源码离线构建
 # - .cache 目录结构（由根目录 makefile 维护）：
-#   .cache/vendor/  (HikRobot SDK *.deb 已经下载好)
 #   .cache/opencv
 #   .cache/opencv_contrib
 #   .cache/spdlog
@@ -16,7 +15,6 @@
 ARG PARALLEL_JOBS=6
 ARG OPENVINO_APT_YEAR=2024
 ARG OPENVINO_COMPONENTS="openvino openvino-libraries-dev"  # 不拉 samples
-ARG ALLOW_NET_FOR_VENDOR=0  # 是否允许为 Hik SDK 自动补依赖（默认 0=完全离线）
 ARG ENABLE_GPU_RUNTIME=0   # 0: 关闭, 1: 启用 GPU runtime
 
 ############################
@@ -60,8 +58,11 @@ RUN set -eux; \
 # OpenVINO Runtime & Dev（APT，ubuntu24）
 RUN set -eux; \
 	install -d -m 0755 /etc/apt/keyrings; \
+	rm -f /etc/apt/keyrings/intel-openvino.gpg; \
 	curl -fsSL https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
-	  | gpg --dearmor -o /etc/apt/keyrings/intel-openvino.gpg; \
+	  -o /tmp/intel-openvino.pub; \
+	gpg --batch --yes --dearmor -o /etc/apt/keyrings/intel-openvino.gpg /tmp/intel-openvino.pub; \
+	rm -f /tmp/intel-openvino.pub; \
 	printf '%s\n' "deb [signed-by=/etc/apt/keyrings/intel-openvino.gpg] https://apt.repos.intel.com/openvino/${OPENVINO_APT_YEAR} ubuntu24 main" \
 	  | tee /etc/apt/sources.list.d/intel-openvino-${OPENVINO_APT_YEAR}.list >/dev/null; \
 	apt-get update; \
@@ -184,7 +185,6 @@ RUN cd /tmp/opencv && mkdir -p build && cd build && \
 FROM base-builder AS builder
 
 ARG PARALLEL_JOBS
-ARG ALLOW_NET_FOR_VENDOR
 
 WORKDIR /app/sp_vision
 
@@ -200,24 +200,6 @@ ENV LD_LIBRARY_PATH=/opt/spdlog/lib:/opt/fmt/lib:/opt/yaml-cpp/lib:/opt/opencv/l
 ENV PKG_CONFIG_PATH=/opt/spdlog/lib/pkgconfig:/opt/fmt/lib/pkgconfig:/opt/yaml-cpp/lib/pkgconfig:/opt/opencv/lib/pkgconfig:/opt/ceres/lib/pkgconfig
 ENV CMAKE_PREFIX_PATH=/opt/spdlog:/opt/fmt:/opt/json:/opt/yaml-cpp:/opt/opencv:/opt/ceres:${CMAKE_PREFIX_PATH}
 
-# 安装 HikRobot SDK（完全离线：用户提前把 deb 放到 .cache/vendor）
-COPY .cache/vendor/ /tmp/sdk_install/
-RUN set -eux; \
-	ARCH=$(dpkg --print-architecture); \
-	INSTALL_ARCH=$([ "${ARCH}" = "amd64" ] && echo "x86_64" || echo "${ARCH}"); \
-	SDK_PKG=$(cd /tmp/sdk_install && ls MvCamCtrlSDK_Runtime*_${INSTALL_ARCH}_*.deb 2>/dev/null | head -n1 || true); \
-	[ -n "${SDK_PKG}" ] || { echo "Error: SDK Runtime .deb not found in .cache/vendor"; ls -R /tmp/sdk_install; exit 1; }; \
-	if [ "${ALLOW_NET_FOR_VENDOR}" = "1" ]; then \
-		apt-get update && apt-get install -y /tmp/sdk_install/${SDK_PKG} && apt-get -f install -y; \
-	else \
-		dpkg -i /tmp/sdk_install/${SDK_PKG} || { echo "Strict offline: missing deps for Hik SDK"; exit 1; }; \
-	fi; \
-	rm -rf /tmp/sdk_install /var/lib/apt/lists/*
-
-# 设置海康SDK （编译时需要）	
-ENV LD_LIBRARY_PATH=/opt/MVS/lib/64:${LD_LIBRARY_PATH}
-ENV MVCAM_COMMON_RUNENV=/opt/MVS
-
 # 复制项目源码并构建（仅在 builder 执行 CMake/Make）
 COPY . /app/sp_vision
 
@@ -230,10 +212,9 @@ RUN set -ex; \
 		source /app/sp_vision/ros2_ws/install/setup.bash; \
 	fi; \
 	cd /app/sp_vision; \
-	mkdir -p build; \
-	cd build; \
-	cmake .. -DCMAKE_BUILD_TYPE=Release && \
-	make -j${PARALLEL_JOBS}
+	rm -rf build; \
+	cmake -S . -B build_docker -DCMAKE_BUILD_TYPE=Release; \
+	cmake --build build_docker -j${PARALLEL_JOBS}
 
 ############################
 # runtime-base: 纯运行环境
@@ -305,8 +286,11 @@ RUN set -eux; \
 # OpenVINO Runtime
 RUN set -eux; \
 	install -d -m 0755 /etc/apt/keyrings; \
+	rm -f /etc/apt/keyrings/intel-openvino.gpg; \
 	curl -fsSL https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
-	  | gpg --dearmor -o /etc/apt/keyrings/intel-openvino.gpg; \
+	  -o /tmp/intel-openvino.pub; \
+	gpg --batch --yes --dearmor -o /etc/apt/keyrings/intel-openvino.gpg /tmp/intel-openvino.pub; \
+	rm -f /tmp/intel-openvino.pub; \
 	printf '%s\n' "deb [signed-by=/etc/apt/keyrings/intel-openvino.gpg] https://apt.repos.intel.com/openvino/${OPENVINO_APT_YEAR} ubuntu24 main" \
 	  | tee /etc/apt/sources.list.d/intel-openvino-${OPENVINO_APT_YEAR}.list >/dev/null; \
 	apt-get update; \
@@ -323,22 +307,17 @@ RUN set -eux; \
 ENV OPENVINO_ROOT=/opt/intel/openvino_latest
 ENV OpenVINO_DIR=${OPENVINO_ROOT}/runtime/cmake
 
-# 拷贝 builder 中装好的第三方库 & Hik SDK 安装结果
+# 拷贝 builder 中装好的第三方库
 COPY --from=spdlog-builder /opt/spdlog /opt/spdlog
 COPY --from=fmt-builder /opt/fmt /opt/fmt
 COPY --from=opencv-builder /opt/opencv /opt/opencv
 COPY --from=json-builder   /opt/json   /opt/json
 COPY --from=yaml-cpp-builder /opt/yaml-cpp /opt/yaml-cpp
 COPY --from=ceres-builder /opt/ceres /opt/ceres
-COPY --from=builder /opt/MVS /opt/MVS
 
-# 拷贝在 builder 中生成的 sp_msgs 安装结果，供运行时 source 使用
-COPY --from=builder /app/sp_vision/ros2_ws/install /ros2_ws/install
-
-ENV LD_LIBRARY_PATH=/opt/spdlog/lib:/opt/fmt/lib:/opt/yaml-cpp/lib:/opt/opencv/lib:/opt/ceres/lib:/opt/MVS/lib/64:${OPENVINO_ROOT}/runtime/lib/intel64
+ENV LD_LIBRARY_PATH=/opt/spdlog/lib:/opt/fmt/lib:/opt/yaml-cpp/lib:/opt/opencv/lib:/opt/ceres/lib:${OPENVINO_ROOT}/runtime/lib/intel64
 ENV PKG_CONFIG_PATH=/opt/spdlog/lib/pkgconfig:/opt/fmt/lib/pkgconfig:/opt/yaml-cpp/lib/pkgconfig:/opt/opencv/lib/pkgconfig:/opt/ceres/lib/pkgconfig
 ENV CMAKE_PREFIX_PATH=/opt/spdlog:/opt/fmt:/opt/json:/opt/yaml-cpp:/opt/opencv:/opt/ceres:${OPENVINO_ROOT}/runtime/cmake:/usr/lib/cmake/openvino
-ENV MVCAM_COMMON_RUNENV=/opt/MVS
 
 RUN ldconfig
 
@@ -382,21 +361,15 @@ RUN set -eux; \
 	} >> /root/.bashrc
 
 WORKDIR /app/sp_vision
-COPY --from=builder /app/sp_vision/build /app/sp_vision/build
-COPY --from=builder /app/sp_vision/configs /app/sp_vision/configs
-COPY --from=builder /app/sp_vision/assets /app/sp_vision/assets
-COPY autostart.sh /app/sp_vision/autostart.sh
-
-RUN chmod +x /app/sp_vision/autostart.sh
-
-ENTRYPOINT ["/app/sp_vision/autostart.sh"]
+ENTRYPOINT ["/bin/bash"]
 
 ############################
 # runtime-prod: 纯运行
 ############################
 FROM runtime-base AS runtime-prod
 WORKDIR /app/sp_vision
-COPY --from=builder /app/sp_vision/build /app/sp_vision/build
+COPY --from=builder /app/sp_vision/ros2_ws/install /ros2_ws/install
+COPY --from=builder /app/sp_vision/build_docker /app/sp_vision/build
 COPY --from=builder /app/sp_vision/configs /app/sp_vision/configs
 COPY --from=builder /app/sp_vision/assets /app/sp_vision/assets
 COPY autostart.sh /app/sp_vision/autostart.sh

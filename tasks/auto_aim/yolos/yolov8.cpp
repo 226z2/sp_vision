@@ -7,13 +7,24 @@
 #include <algorithm>
 #include <filesystem>
 #include <random>
+#include <string_view>
 
 #include "tasks/auto_aim/classifier.hpp"
 #include "tools/img_tools.hpp"
 #include "tools/logger.hpp"
+#include "tools/plotter.hpp"
 
 namespace auto_aim
 {
+namespace
+{
+void publish_debug_image(const cv::Mat & image, std::string_view frame_id)
+{
+  static tools::Plotter plotter;
+  plotter.plot_image(image, frame_id);
+}
+}  // namespace
+
 YOLOV8::YOLOV8(const std::string & config_path, bool debug)
 : classifier_(config_path), detector_(config_path), debug_(debug)
 {
@@ -290,7 +301,7 @@ void YOLOV8::draw_detections(
     cv::rectangle(detection, roi_, green, 2);
   }
   cv::resize(detection, detection, {}, 0.5, 0.5);  // 显示时缩小图片尺寸
-  cv::imshow("detection", detection);
+  publish_debug_image(detection, "yolo/detection");
 }
 
 void YOLOV8::sort_keypoints(std::vector<cv::Point2f> & keypoints)

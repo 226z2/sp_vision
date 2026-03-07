@@ -16,6 +16,7 @@
 #include "tools/math_tools.hpp"
 #include "tools/plotter.hpp"
 #include "tools/recorder.hpp"
+#include "src/referee_runtime.hpp"
 
 const std::string keys =
   "{help h usage ? |                  | 输出命令行参数说明}"
@@ -71,6 +72,12 @@ int main(int argc, char * argv[])
     Eigen::Vector3d ypr = tools::eulers(solver.R_gimbal2world(), 2, 1, 0);
 
     auto armors = detector.detect(img);
+
+    const auto ref = referee_runtime::from_io(cboard.referee());
+    if (const auto color = referee_runtime::enemy_color(ref))
+      tracker.set_enemy_color(*color);
+    else
+      tracker.reset_enemy_color();
 
     auto targets = tracker.track(armors, t);
 
@@ -163,10 +170,14 @@ int main(int argc, char * argv[])
     }
     plotter.plot(data);
 
+#if defined(SPV_PLOTTER_BACKEND_FOXGLOVE)
+    plotter.plot_image(img, "reprojection");
+#else
     cv::resize(img, img, {}, 0.5, 0.5);  // 显示时缩小图片尺寸
     cv::imshow("reprojection", img);
     auto key = cv::waitKey(1);
     if (key == 'q') break;
+#endif
   }
 
   return 0;

@@ -17,6 +17,20 @@ ShootMode parse_shoot_mode(const std::string & s)
   if (s == "both_shoot") return ShootMode::both_shoot;
   return ShootMode::both_shoot;
 }
+
+constexpr std::uint64_t kRefereeStaleNs = 1000ULL * 1000ULL * 1000ULL;
+
+bool referee_can_fire(const RefereeStatus & rs)
+{
+  if (!(rs.valid && rs.fire_allowed)) return false;
+  if (rs.host_ts_ns == 0) return false;
+  const auto now_ns = static_cast<std::uint64_t>(
+    std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::steady_clock::now().time_since_epoch())
+      .count());
+  if (now_ns < rs.host_ts_ns) return false;
+  return (now_ns - rs.host_ts_ns) <= kRefereeStaleNs;
+}
 }  // namespace
 
 struct Dm02::Impl
@@ -60,18 +74,26 @@ Eigen::Quaterniond Dm02::q(std::chrono::steady_clock::time_point timestamp)
 
 void Dm02::send(Command command)
 {
-  sync_cached_state();
-
-  impl_->link->send(
-    command.control, command.control, static_cast<float>(command.yaw), 0.0F, 0.0F,
+  send(
+    command.control, command.shoot, static_cast<float>(command.yaw), 0.0F, 0.0F,
     static_cast<float>(command.pitch), 0.0F, 0.0F);
 }
 
 void Dm02::send(
-  bool control, bool target_valid, float yaw, float yaw_vel, float yaw_acc, float pitch,
+  bool control, bool fire, float yaw, float yaw_vel, float yaw_acc, float pitch,
   float pitch_vel, float pitch_acc)
 {
-  impl_->link->send(control, target_valid, yaw, yaw_vel, yaw_acc, pitch, pitch_vel, pitch_acc);
+  sync_cached_state();
+
+  // Keep delta command semantics: bit0 indicates whether this frame has valid host control.
+  impl_->link->send(control, control, yaw, yaw_vel, yaw_acc, pitch, pitch_vel, pitch_acc);
+
+  const auto ref = impl_->link->referee();
+  const bool fire_on = control && fire && referee_can_fire(ref);
+  impl_->link->send_fire(fire_on, 2, fire_on ? 2 : 0, control ? 0x0001u : 0u);
+
+  // Keep chassis command path alive with explicit zero command.
+  impl_->link->send_chassis(0, 0, 0, 3, 0u);
 }
 
 GimbalMode Dm02::gimbal_mode() const
@@ -99,6 +121,11 @@ ToFStatus Dm02::tof() const
   return impl_->link->tof();
 }
 
+RefereeStatus Dm02::referee() const
+{
+  return impl_->link->referee();
+}
+
 TimeSyncStatus Dm02::timesync() const
 {
   return impl_->link->timesync();
@@ -112,6 +139,19 @@ std::optional<std::uint64_t> Dm02::device_us_to_host_us(std::uint64_t device_ts_
 std::string Dm02::str(GimbalMode mode) const
 {
   return impl_->link->str(mode);
+}
+
+void Dm02::send_fire(
+  bool fire_on, std::int32_t fire_mode, std::int32_t burst_count, std::uint16_t status)
+{
+  impl_->link->send_fire(fire_on, fire_mode, burst_count, status);
+}
+
+void Dm02::send_chassis(
+  std::int32_t vx_mm_s, std::int32_t vy_mm_s, std::int32_t wz_mdeg_s, std::int32_t mode,
+  std::uint16_t status)
+{
+  impl_->link->send_chassis(vx_mm_s, vy_mm_s, wz_mdeg_s, mode, status);
 }
 
 void Dm02::sync_cached_state()

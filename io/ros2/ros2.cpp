@@ -23,6 +23,11 @@ ROS2::~ROS2()
 
 void ROS2::publish(const Eigen::Vector4d & target_pos) { publish2nav_->send_data(target_pos); }
 
+void ROS2::publish_serial_copy(const sp_msgs::msg::Dm02SerialCopyMsg & msg)
+{
+  publish2nav_->send_serial_copy(msg);
+}
+
 std::vector<int8_t> ROS2::subscribe_enemy_status()
 {
   return subscribe2nav_->subscribe_enemy_status();

@@ -47,6 +47,9 @@ public:
   void get_auto_aim_target(
     std::list<auto_aim::Armor> & armors, const std::vector<int8_t> & auto_aim_target);
 
+  void set_enemy_color(auto_aim::Color color);
+  void reset_enemy_color();
+
 private:
   int img_width_;
   int img_height_;
@@ -55,6 +58,7 @@ private:
   int mode_;
   int count_;
 
+  auto_aim::Color default_enemy_color_;
   auto_aim::Color enemy_color_;
   auto_aim::YOLO detector_;
   std::vector<auto_aim::ArmorName> invincible_armor_;  //无敌状态机器人编号,英雄为1，哨兵为6
