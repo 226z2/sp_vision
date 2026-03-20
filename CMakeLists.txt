@@ -128,6 +128,7 @@ add_executable(usbcamera_detect_test tests/usbcamera_detect_test.cpp)
 add_executable(usbcamera_test tests/usbcamera_test.cpp)
 add_executable(handeye_test tests/handeye_test.cpp)
 add_executable(dm_test tests/dm_test.cpp)
+add_executable(dm_virtual_sender_test tests/dm_virtual_sender_test.cpp)
 add_executable(minimum_vision_system tests/minimum_vision_system.cpp)
 add_executable(communication_demo tests/communication_demo.cpp)
 
@@ -144,6 +145,7 @@ target_link_libraries(usbcamera_detect_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml
 target_link_libraries(usbcamera_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 target_link_libraries(handeye_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 target_link_libraries(dm_test PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
+target_link_libraries(dm_virtual_sender_test PRIVATE fmt::fmt io)
 target_link_libraries(minimum_vision_system PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 target_link_libraries(communication_demo PRIVATE io Threads::Threads)
 
@@ -172,6 +174,8 @@ if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND rosidl_typesupport_
     add_executable(publish_test tests/publish_test.cpp)
     add_executable(subscribe_test tests/subscribe_test.cpp)
     add_executable(topic_loop_test tests/topic_loop_test.cpp)
+    add_executable(ws_bridge_test tests/ws_bridge_test.cpp)
+    add_executable(dm_ws_bridge_test tests/dm_ws_bridge_test.cpp)
 
     target_link_libraries(sentry PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim omniperception tools io)
     target_link_libraries(sentry_bp PRIVATE ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim omniperception tools io)
@@ -180,6 +184,8 @@ if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND rosidl_typesupport_
     target_link_libraries(publish_test PRIVATE ${OpenCV_LIBS} fmt::fmt tools io auto_aim)
     target_link_libraries(subscribe_test PRIVATE ${OpenCV_LIBS} fmt::fmt tools io)
     target_link_libraries(topic_loop_test PRIVATE ${OpenCV_LIBS} fmt::fmt tools io)
+    target_link_libraries(ws_bridge_test PRIVATE ${OpenCV_LIBS} fmt::fmt tools io)
+    target_link_libraries(dm_ws_bridge_test PRIVATE ${OpenCV_LIBS} fmt::fmt tools io)
 else()
     message(STATUS "ROS2 environment not found, skipping ROS2-related code.")
 endif()
@@ -217,6 +223,7 @@ set(SP_EXECUTABLE_TARGETS
     usbcamera_test
     handeye_test
     dm_test
+    dm_virtual_sender_test
     minimum_vision_system
     gimbal_test
     planner_test
@@ -227,7 +234,9 @@ set(SP_EXECUTABLE_TARGETS
     sentry_multithread
     publish_test
     subscribe_test
-    topic_loop_test)
+    topic_loop_test
+    ws_bridge_test
+    dm_ws_bridge_test)
 
 foreach(exe_target ${SP_EXECUTABLE_TARGETS})
     if(TARGET ${exe_target})

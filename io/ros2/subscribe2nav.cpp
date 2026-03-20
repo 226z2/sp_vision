@@ -3,6 +3,8 @@
 #include <sstream>
 #include <vector>
 
+#include "io/ws/sp_msg_json.hpp"
+
 namespace io
 {
 
@@ -33,6 +35,7 @@ void Subscribe2Nav::enemy_status_callback(const sp_msgs::msg::EnemyStatusMsg::Sh
 {
   enemy_statue_queue_.clear();
   enemy_statue_queue_.push(*msg);
+  (void)io::ws::publish_enemy_status(*msg);
 
   enemy_status_counter_++;
 
@@ -53,6 +56,7 @@ void Subscribe2Nav::autoaim_target_callback(const sp_msgs::msg::AutoaimTargetMsg
 {
   autoaim_target_queue_.clear();
   autoaim_target_queue_.push(*msg);
+  (void)io::ws::publish_autoaim_target(*msg);
 
   autoaim_target_counter_++;
 

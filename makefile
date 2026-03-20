@@ -265,6 +265,8 @@ info:
 	@echo "$(CYAN)Container: $(CONTAINER_NAME)$(RESET)"
 	@echo "$(CYAN)USE_HOST_NET=$(USE_HOST_NET)$(RESET)"
 	@echo "$(CYAN)FORWARD_PORTS=$(FORWARD_PORTS)$(RESET)"
+	@echo "$(CYAN)SPV_WS_ENABLE=$(SPV_WS_ENABLE)$(RESET)"
+	@echo "$(CYAN)SPV_WS_PORT=$(SPV_WS_PORT)$(RESET)"
 	@echo "$(CYAN)DATA_DIR=$(DATA_DIR)$(RESET)"
 	@echo "$(CYAN)CACHE_DIR=$(CACHE_DIR)$(RESET)"
 	@echo "$(CYAN)Repos: $(REPO_NAMES)$(RESET)"
@@ -288,7 +290,24 @@ SPV_RUN_ARGS       ?=
 SPV_CMD            ?=
 CMD                ?=
 SPV_FOXGLOVE_PORT  ?= 8765
+SPV_WS_ENABLE      ?= 1
+SPV_WS_PORT        ?= 8878
+SPV_WS_BIND_HOST   ?= 0.0.0.0
 SPV_DAEMON_NAME    ?= $(CONTAINER_NAME)_svc
+SPV_SUPERVISOR_CONTAINER_NAME ?= $(CONTAINER_NAME)_supervised
+SPV_AUTOSTART      ?= 1
+SPV_SUPERVISE      ?= 1
+SPV_REQUIRED_CAMERA ?= 1
+SPV_REQUIRED_SERIAL ?= 1
+SPV_SERIAL_CANDIDATES ?= /dev/gimbal,/dev/ttyACM0,/dev/ttyACM1,/dev/ttyACM2,/dev/ttyUSB0,/dev/ttyUSB1,/dev/ttyUSB2
+SPV_SERIAL_BAUD    ?= 115200
+SPV_RESTART_DELAY_MS ?= 1500
+SPV_STARTUP_TIMEOUT_SEC ?= 0
+SPV_FAIL_NOTIFY_ENABLE ?= 1
+SPV_FAIL_NOTIFY_HOST ?= 127.0.0.1
+SPV_FAIL_NOTIFY_PORT ?= 18878
+SPV_FAIL_NOTIFY_SERVICE_NAME ?= spv_supervisor
+SPV_SYSTEMD_SERVICE_NAME ?= spv-supervisor.service
 SPV_CMD_REAL       := $(if $(strip $(SPV_CMD)),$(SPV_CMD),$(CMD))
 SPV_COMPONENTS     ?= auto
 SPV_AUTO_SYNC_COMPONENT_DEPS ?= 1
@@ -298,15 +317,24 @@ SPV_FLATC_ASSET ?= Linux.flatc.binary.g++-13.zip
 SPV_KILL_PORT ?= $(SPV_FOXGLOVE_PORT)
 SPV_KILL_BEFORE_RUN ?= 0
 
+define maybe_map_port
+$(if $(filter yes,$(USE_HOST_NET)),,$(if $(filter $(1),$(FORWARD_PORTS)),,-p $(1):$(1)))
+endef
+
 define DOCKER_RUN_SPV
 docker run --rm \
 	$(NETWORK_FLAG) \
 	$(PORT_FLAGS) \
+	$(call maybe_map_port,$(SPV_FOXGLOVE_PORT)) \
+	$(call maybe_map_port,$(SPV_WS_PORT)) \
 	$(DOCKER_PRIVILEGED_FLAGS) \
 	-v /dev/bus/usb:/dev/bus/usb \
 	$(GPU_FLAGS) \
 	--device=$(GIMBAL_DEV_HOST):$(GIMBAL_DEV_CONT) \
 	-e SPV_FOXGLOVE_PORT=$(SPV_FOXGLOVE_PORT) \
+	-e SPV_WS_ENABLE=$(SPV_WS_ENABLE) \
+	-e SPV_WS_PORT=$(SPV_WS_PORT) \
+	-e SPV_WS_BIND_HOST=$(SPV_WS_BIND_HOST) \
 	-v $(CURDIR):/app/sp_vision \
 	-v $(DATA_DIR):/app/data \
 	-w /app/sp_vision \
@@ -314,7 +342,7 @@ docker run --rm \
 	$(IMAGE_NAME):$(TAG)
 endef
 
-.PHONY: spv-config spv-build spv-rebuild spv-build-with-ros spv-run spv-cmd spv-ros-init spv-ros-build spv-ros-rebuild spv-daemon-up spv-daemon-down spv-daemon-shell spv-ros-daemon-start spv-ros-daemon-stop spv-ros-daemon-status spv-sync-deps spv-kill-port spv-kill-foxglove-port spv-help
+.PHONY: spv-config spv-build spv-rebuild spv-build-with-ros spv-run spv-cmd spv-ros-init spv-ros-build spv-ros-rebuild spv-daemon-up spv-daemon-down spv-daemon-shell spv-ros-daemon-start spv-ros-daemon-stop spv-ros-daemon-status spv-sync-deps spv-kill-port spv-kill-foxglove-port spv-supervisor-run spv-supervisor-install spv-supervisor-status spv-supervisor-logs spv-help
 
 spv-sync-deps:
 	@set -e; \
@@ -524,12 +552,57 @@ spv-ros-daemon-stop:
 spv-ros-daemon-status:
 	@docker exec $(SPV_DAEMON_NAME) /bin/bash -lc 'source /opt/ros/jazzy/setup.bash; ros2 daemon status'
 
+spv-supervisor-run: ensure-dirs
+	@env \
+		SPV_ROOT_DIR=$(CURDIR) \
+		IMAGE_NAME=$(IMAGE_NAME) \
+		TAG=$(TAG) \
+		DATA_DIR=$(DATA_DIR) \
+		USE_HOST_NET=$(USE_HOST_NET) \
+		FORWARD_PORTS='$(FORWARD_PORTS)' \
+		ENABLE_GPU=$(ENABLE_GPU) \
+		DOCKER_PRIVILEGED_FLAGS='$(DOCKER_PRIVILEGED_FLAGS)' \
+		GIMBAL_DEV_CONT=$(GIMBAL_DEV_CONT) \
+		SPV_BUILD_DIR=$(SPV_BUILD_DIR) \
+		SPV_RUN_TARGET='$(SPV_RUN_TARGET)' \
+		SPV_RUN_ARGS='$(SPV_RUN_ARGS)' \
+		SPV_AUTOSTART=$(SPV_AUTOSTART) \
+		SPV_SUPERVISE=$(SPV_SUPERVISE) \
+		SPV_REQUIRED_CAMERA=$(SPV_REQUIRED_CAMERA) \
+		SPV_REQUIRED_SERIAL=$(SPV_REQUIRED_SERIAL) \
+		SPV_SERIAL_CANDIDATES='$(SPV_SERIAL_CANDIDATES)' \
+		SPV_SERIAL_BAUD=$(SPV_SERIAL_BAUD) \
+		SPV_RESTART_DELAY_MS=$(SPV_RESTART_DELAY_MS) \
+		SPV_STARTUP_TIMEOUT_SEC=$(SPV_STARTUP_TIMEOUT_SEC) \
+		SPV_FOXGLOVE_PORT=$(SPV_FOXGLOVE_PORT) \
+		SPV_WS_ENABLE=$(SPV_WS_ENABLE) \
+		SPV_WS_PORT=$(SPV_WS_PORT) \
+		SPV_WS_BIND_HOST=$(SPV_WS_BIND_HOST) \
+		SPV_FAIL_NOTIFY_ENABLE=$(SPV_FAIL_NOTIFY_ENABLE) \
+		SPV_FAIL_NOTIFY_HOST=$(SPV_FAIL_NOTIFY_HOST) \
+		SPV_FAIL_NOTIFY_PORT=$(SPV_FAIL_NOTIFY_PORT) \
+		SPV_FAIL_NOTIFY_SERVICE_NAME=$(SPV_FAIL_NOTIFY_SERVICE_NAME) \
+		SPV_SUPERVISOR_CONTAINER_NAME=$(SPV_SUPERVISOR_CONTAINER_NAME) \
+		bash tools/spv_supervisor.sh
+
+spv-supervisor-install:
+	@env \
+		SPV_SYSTEMD_SERVICE_NAME=$(SPV_SYSTEMD_SERVICE_NAME) \
+		bash tools/install_spv_supervisor_service.sh
+
+spv-supervisor-status:
+	@systemctl status $(SPV_SYSTEMD_SERVICE_NAME) --no-pager
+
+spv-supervisor-logs:
+	@journalctl -u $(SPV_SYSTEMD_SERVICE_NAME) -f
+
 spv-help:
 	@echo "spv-config      : container cmake configure"
 	@echo "spv-build       : container cmake configure+build"
 	@echo "spv-rebuild     : clean build dir and rebuild in container"
 	@echo "spv-build-with-ros : build ROS workspace first, then build main project"
 	@echo "spv-run         : run built target in container (SPV_RUN_TARGET=...)"
+	@echo "                 : NAT mode auto-maps SPV_WS_PORT/SPV_FOXGLOVE_PORT when missing from FORWARD_PORTS"
 	@echo "spv-cmd         : run custom command in container (SPV_CMD=...)"
 	@echo "spv-ros-build   : build ROS workspace packages (SPV_ROS_PACKAGES=...)"
 	@echo "spv-ros-rebuild : clean and rebuild ROS workspace"
@@ -538,6 +611,10 @@ spv-help:
 	@echo "spv-daemon-down : stop long-running dev container"
 	@echo "spv-daemon-shell: shell into long-running dev container"
 	@echo "spv-ros-daemon-start|stop|status : control ros2 daemon inside spv daemon"
+	@echo "spv-supervisor-run    : run host-side supervisor"
+	@echo "spv-supervisor-install: install and enable systemd unit for host-side supervisor"
+	@echo "spv-supervisor-status : show systemd status for host-side supervisor"
+	@echo "spv-supervisor-logs   : follow journalctl logs for host-side supervisor"
 	@echo "spv-sync-deps   : sync optional component deps (SPV_COMPONENTS=auto|foxglove|all)"
 	@echo "spv-kill-port   : kill listener on TCP port (SPV_KILL_PORT=..., default SPV_FOXGLOVE_PORT)"
 	@echo "spv-kill-foxglove-port : alias of spv-kill-port"

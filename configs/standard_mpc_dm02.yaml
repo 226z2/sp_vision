@@ -80,7 +80,7 @@ dm02_mode: "AUTO_AIM"
 
 # standard_mpc 需要弹速参与规划；如果 MCU 还没上报弹速，先用一个默认值跑通闭环
 # 单位：m/s
-dm02_bullet_speed_default: 28.0
+dm02_bullet_speed_default: 10.0
 
 #####-----planner-----#####
 fire_thresh: 0.003

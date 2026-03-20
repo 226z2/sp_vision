@@ -5,6 +5,7 @@
 #include <memory>
 #include <thread>
 
+#include "io/ws/sp_msg_json.hpp"
 #include "tools/logger.hpp"
 
 namespace io
@@ -44,6 +45,7 @@ void Publish2Nav::send_data(const Eigen::Vector4d & target_pos)
 void Publish2Nav::send_serial_copy(const sp_msgs::msg::Dm02SerialCopyMsg & msg)
 {
   serial_copy_publisher_->publish(msg);
+  (void)io::ws::publish_dm02_serial_copy(msg);
 }
 
 void Publish2Nav::start()

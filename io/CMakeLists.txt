@@ -9,6 +9,7 @@ add_library(io STATIC
     hikrobot/hikrobot.cpp
     usbcamera/usbcamera.cpp
     camera.cpp
+    ws/ws_bridge.cpp
     dm02/dm02.cpp
     dm02/impl/link_impl.cpp
     dm02/impl/dm02_driver.cpp
@@ -29,6 +30,11 @@ else()
 endif()
 
 target_link_libraries(io PUBLIC MvCameraControl usb-1.0 yaml-cpp serial Threads::Threads)
+target_include_directories(io PRIVATE
+    ${PROJECT_SOURCE_DIR}/3rdparty/asio/asio/include
+    ${PROJECT_SOURCE_DIR}/3rdparty/websocketpp
+)
+target_compile_definitions(io PRIVATE ASIO_STANDALONE)
 
 ################## 检查 ROS 环境 ##################
 find_package(ament_cmake QUIET)

@@ -1,0 +1,17 @@
+[Unit]
+Description=SP Vision Supervisor
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=__SPV_ROOT_DIR__
+EnvironmentFile=-/etc/default/spv-supervisor
+ExecStart=/usr/bin/env bash __SPV_ROOT_DIR__/tools/spv_supervisor.sh
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

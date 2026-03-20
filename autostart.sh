@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+ARGS=("$@")
+
 # 容器内自启脚本：
 # - 可选：补一条 CAN 口配置（宿主已通过 udev up can0，失败不影响启动）
 # - 切到项目根目录
